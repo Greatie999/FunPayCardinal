@@ -1,3 +1,13 @@
+from enum import Enum
+
+
 class Links:
     BASE_URL = "https://funpay.com/"
-    RUNNER = "https://funpay.com/runner"
+    ORDERS = "https://funpay.com/orders/trade"
+    RUNNER = "https://funpay.com/runner/"
+
+
+class OrderStatuses(Enum):
+    OUTSTANDING = 0
+    COMPLETED = 1
+    REFUND = 2

@@ -10,7 +10,7 @@ from .enums import Links
 @dataclass(frozen=True)
 class Account:
     """
-    Датакласс, описывающий аккаунт. Возвращается API.account.get_account_data(token).\n
+    Дата-класс, описывающий аккаунт. Возвращается API.account.get_account_data(token).\n
     app_data: dict - словарь с данными из <body data-app-data=>
     id: int - id пользователя.\n
     username: str - имя пользователя.\n
@@ -32,12 +32,9 @@ class Account:
 
 def get_account_data(token: str) -> Account:
     """
-    Возвращает данные аккаунта FunPay.
+    Получает общие данные аккаунта FunPay.
     :param token: golden_key (токен) аккаунта.
-    :return: Словарь с данными, если запрос прошел успешно.
-    Словарь с описанием ошибки - если нет.
-    Формат данных: {"success": True / False, "data": {}}
-    где "success" - результат выполнения, "data": - полученные с сервера данные / описание ошибки.
+    :return: Экземпляр дата-класса API.account.Account
     """
     headers = {"cookie": f"golden_key={token}"}
     response = requests.get(Links.BASE_URL, headers=headers)
