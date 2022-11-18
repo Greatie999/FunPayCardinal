@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 
 from .enums import Links, CategoryTypes
-from categories import Category
+from .categories import Category
 
 
 def get_user_categories(user_id: int, include_currency: bool = False, timeout: float = 10.0) -> list[Category]:
@@ -43,7 +43,6 @@ def get_user_categories(user_id: int, include_currency: bool = False, timeout: f
         edit_lots_link = public_link + "trade"
         title = category_link.text
         category_id = int(public_link.split("/")[-2])
-
         category_object = Category(id=category_id, title=title, edit_lots_link=edit_lots_link,
                                    public_link=public_link, type=category_type)
         categories.append(category_object)
