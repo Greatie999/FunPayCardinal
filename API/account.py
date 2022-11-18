@@ -30,14 +30,15 @@ class Account:
     last_update: int
 
 
-def get_account_data(token: str) -> Account:
+def get_account_data(token: str, timeout: float = 10.0) -> Account:
     """
     Получает общие данные аккаунта FunPay.
     :param token: golden_key (токен) аккаунта.
+    :param timeout: тайм-аут выполнения запроса.
     :return: Экземпляр дата-класса API.account.Account
     """
     headers = {"cookie": f"golden_key={token}"}
-    response = requests.get(Links.BASE_URL, headers=headers)
+    response = requests.get(Links.BASE_URL, headers=headers, timeout=timeout)
 
     if response.status_code != 200:
         raise Exception  # todo: создать и добавить кастомное исключение: не удалось получить данные с сайта

@@ -5,8 +5,17 @@ import requests
 from .enums import Links, OrderStatuses
 
 
-@dataclass
+@dataclass(frozen=True)
 class Order:
+    """
+    Дата-класс, описывающий заказ.\n
+    id: int - ID заказа.\n
+    title: str - Краткое описание заказа.\n
+    price: float - Оплаченная сумма за заказ.\n
+    buyer_name: str - Псевдоним покупателя.\n
+    buyer_id: int - ID покупателя.\n
+    status: API.enums.OrderStatuses - статус выполнения заказа.\n
+    """
     id: str
     title: str
     price: float
@@ -16,19 +25,28 @@ class Order:
 
 
 def get_orders(token: str,
+               session_id: str | None = None,
                include_outstanding: bool = True,
                include_completed: bool = False,
-               include_refund: bool = False) -> dict[str, Order]:
+               include_refund: bool = False,
+               exclude: list[int] | None = None,
+               timeout: float = 10.0) -> dict[str, Order]:
     """
-    Получает данные о заказах на аккаунте.
+    Получает список заказов на аккаунте.
     :param token: golden_key (токен) аккаунта.
-    :param include_outstanding: искать незавершенные заказы.
-    :param include_completed: искать завершенные заказы.
-    :param include_refund: искать заказы, за которые оформлен возврат денежных средств.
-    :return: Словарь {"id заказа": экземпляр дата-класса API.orders.Order}.
+    :param session_id: PHPSESSID.
+    :param include_outstanding: включить в список оплаченные (но не завершенные) заказы.
+    :param include_completed: включить в список завершенные заказы.
+    :param include_refund: включить в список заказы, за которые оформлен возврат.
+    :param exclude: список ID заказов, которые нужно исключить из итогового списка.
+    :param timeout: тайм-аут выполнения запроса.
+    :return: Словарь {id заказа (int): экземпляр дата-класса API.orders.Order}.
     """
-    headers = {"cookie": f"golden_key={token}"}
-    response = requests.get(Links.ORDERS, headers=headers)
+    exclude = exclude if exclude else []
+    headers = {"cookie": f"golden_key={token};"}
+    if session_id:
+        headers["cookie"] += f" PHPSESSID={session_id};"
+    response = requests.get(Links.ORDERS, headers=headers, timeout=timeout)
 
     if response.status_code != 200:
         raise Exception  # todo: создать и добавить кастомное исключение: не удалось получить данные с сайта
@@ -59,6 +77,8 @@ def get_orders(token: str,
             status = OrderStatuses.COMPLETED
 
         order_id = i.find("div", {"class": "tc-order"}).text
+        if order_id in exclude:
+            continue
         title = i.find("div", {"class": "order-desc"}).find("div").text
         price = float(i.find("div", {"class": "tc-price"}).text.split(" ")[0])
 
