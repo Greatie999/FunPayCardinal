@@ -19,7 +19,7 @@ class LogTypes(Enum):
 
 class Logger:
     def __init__(self, to_file: bool = True):
-        self.__prefix = f"{Back.LIGHTBLACK_EX}[LOGGER]"
+        self.__prefix = f"{Back.LIGHTBLACK_EX}[Logger]"
         self.to_file = to_file
         self.log_file_name = datetime.now().strftime("%d-%m-%Y-%H-%M-%S.txt")
         if self.to_file:
