@@ -1,22 +1,21 @@
-from dataclasses import dataclass
-
 from .enums import OrderStatuses
 
 
-@dataclass
 class Order:
     """
-    Дата-класс, описывающий заказ.\n
-    id: int - ID заказа.\n
-    title: str - Краткое описание заказа.\n
-    price: float - Оплаченная сумма за заказ.\n
-    buyer_name: str - Псевдоним покупателя.\n
-    buyer_id: int - ID покупателя.\n
-    status: API.enums.OrderStatuses - статус выполнения заказа.\n
+    Класс, описывающий заказ.
     """
-    id: str
-    title: str
-    price: float
-    buyer_name: str
-    buyer_id: int
-    status: OrderStatuses
+    def __init__(self, id_: str, title: str, price: float, buyer_username: str, buyer_id: int, status: OrderStatuses):
+        """
+        :param id_: ID заказа.
+        :param title: Краткое описание заказа.
+        :param price: Оплаченная сумма за заказ.
+        :param buyer_username: Псевдоним покупателя.
+        :param buyer_id: ID покупателя.
+        """
+        self.id = id_
+        self.title = title
+        self.price = price
+        self.buyer_name = buyer_username
+        self.buyer_id = buyer_id
+        self.status = status

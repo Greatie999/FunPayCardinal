@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -8,29 +7,32 @@ from .enums import Links, OrderStatuses, CategoryTypes
 from .orders import Order
 
 
-@dataclass
 class Account:
     """
-    Дата-класс, описывающий аккаунт. Возвращается API.account.get_account_data(token).\n
-    app_data: dict - словарь с данными из <body data-app-data=>
-    id: int - id пользователя.\n
-    username: str - имя пользователя.\n
-    balance: float - текущий баланс пользователя.\n
-    currency: str - знак валюты на аккаунте.\n
-    active_sales: int - текущие активные продажи пользователя.\n
-    csrf_token: str - csrf токен.\n
-    session_id: str - PHPSESSID.\n
-    last_update: int - время последнего обновления.
+    Класс, описывающий аккаунт. Возвращается API.account.get_account_data(token).
     """
-    app_data: dict
-    id: int
-    username: str
-    balance: float
-    currency: str | None
-    active_sales: int
-    csrf_token: str
-    session_id: str
-    last_update: int
+    def __init__(self, app_data: dict, id_: int, username: str, balance: float, currency: str | None,
+                 active_sales: int, csrf_token: str, session_id: str, last_update: int):
+        """
+        :param app_data: словарь с данными из <body data-app-data=>
+        :param id_: id пользователя.
+        :param username: имя пользователя.
+        :param balance: текущий баланс пользователя.
+        :param currency: знак валюты на аккаунте.
+        :param active_sales: текущие активные продажи пользователя.
+        :param csrf_token: csrf токен.
+        :param session_id: PHPSESSID.
+        :param last_update: время последнего обновления.
+        """
+        self.app_data = app_data
+        self.id = id_
+        self.username = username
+        self.balance = balance
+        self.currency = currency
+        self.active_sales = active_sales
+        self.csrf_token = csrf_token
+        self.session_id = session_id
+        self.last_update = last_update
 
 
 def get_account_data(token: str, timeout: float = 10.0) -> Account:
@@ -64,12 +66,12 @@ def get_account_data(token: str, timeout: float = 10.0) -> Account:
 
     balance = parser.find("span", {"class": "badge badge-balance"})
     balance_count = float(balance.text.split(" ")[0]) if balance else 0
-    balance_currency = balance.text.split(" ")[1]  if balance else None
+    balance_currency = balance.text.split(" ")[1] if balance else None
 
     cookies = response.cookies.get_dict()
     session_id = cookies["PHPSESSID"]
 
-    return Account(app_data=app_data, id=userid, username=username, balance=balance_count, currency=balance_currency,
+    return Account(app_data=app_data, id_=userid, username=username, balance=balance_count, currency=balance_currency,
                    active_sales=active_sales,
                    csrf_token=csrf_token, session_id=session_id, last_update=int(time.time()))
 
@@ -137,7 +139,7 @@ def get_account_orders(token: str,
         buyer_name = buyer.text
         buyer_id = int(buyer.get("data-href")[:-1].split("https://funpay.com/users/")[1])
 
-        order_object = Order(id=order_id, title=title, price=price, buyer_name=buyer_name, buyer_id=buyer_id,
+        order_object = Order(id_=order_id, title=title, price=price, buyer_username=buyer_name, buyer_id=buyer_id,
                              status=status)
 
         parsed_orders[order_id] = order_object

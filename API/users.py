@@ -44,7 +44,7 @@ def get_user_categories(user_id: int, include_currency: bool = False, timeout: f
         edit_lots_link = public_link + "trade"
         title = category_link.text
         category_id = int(public_link.split("/")[-2])
-        category_object = Category(id=category_id, game_id=None, title=title, edit_lots_link=edit_lots_link,
-                                   public_link=public_link, type=category_type)
+        category_object = Category(id_=category_id, game_id=None, title=title, edit_lots_link=edit_lots_link,
+                                   public_link=public_link, type_=category_type)
         categories.append(category_object)
     return categories
