@@ -3,5 +3,6 @@
 /.idea
 /API/__pycache__
 /logs
+/storage/cache
 test.py
 test2.py

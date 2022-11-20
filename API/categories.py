@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from .enums import CategoryTypes
 
 
-@dataclass(frozen=True)
+@dataclass
 class Category:
     """
     Дата-класс, описывающий категорию лотов.\n
@@ -14,6 +14,7 @@ class Category:
     type: API.enums.CategoryTypes - тип категории.\n
     """
     id: int
+    game_id: int | None
     title: str
     edit_lots_link: str
     public_link: str

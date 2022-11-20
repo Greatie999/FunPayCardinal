@@ -9,6 +9,7 @@ def get_user_categories(user_id: int, include_currency: bool = False, timeout: f
     """
     Получает список категорий лотов пользователя (кроме лотов с игровой валютой, т.к. лоты в категории игровой валюты
     нельзя поднять).
+
     :param user_id: ID пользователя, категории лотов которого нужно получить.
     :param include_currency: включить ли в возвращаемый список лоты из категории игровой валюты.
     :param timeout: тайм-аут выполнения запроса.
@@ -43,7 +44,7 @@ def get_user_categories(user_id: int, include_currency: bool = False, timeout: f
         edit_lots_link = public_link + "trade"
         title = category_link.text
         category_id = int(public_link.split("/")[-2])
-        category_object = Category(id=category_id, title=title, edit_lots_link=edit_lots_link,
+        category_object = Category(id=category_id, game_id=None, title=title, edit_lots_link=edit_lots_link,
                                    public_link=public_link, type=category_type)
         categories.append(category_object)
     return categories

@@ -8,7 +8,7 @@ from .enums import Links, OrderStatuses, CategoryTypes
 from .orders import Order
 
 
-@dataclass(frozen=True)
+@dataclass
 class Account:
     """
     Дата-класс, описывающий аккаунт. Возвращается API.account.get_account_data(token).\n
@@ -16,6 +16,7 @@ class Account:
     id: int - id пользователя.\n
     username: str - имя пользователя.\n
     balance: float - текущий баланс пользователя.\n
+    currency: str - знак валюты на аккаунте.\n
     active_sales: int - текущие активные продажи пользователя.\n
     csrf_token: str - csrf токен.\n
     session_id: str - PHPSESSID.\n
@@ -25,6 +26,7 @@ class Account:
     id: int
     username: str
     balance: float
+    currency: str | None
     active_sales: int
     csrf_token: str
     session_id: str
@@ -34,6 +36,7 @@ class Account:
 def get_account_data(token: str, timeout: float = 10.0) -> Account:
     """
     Получает общие данные аккаунта FunPay.
+
     :param token: golden_key (токен) аккаунта.
     :param timeout: тайм-аут выполнения запроса.
     :return: Экземпляр дата-класса API.account.Account
@@ -60,12 +63,14 @@ def get_account_data(token: str, timeout: float = 10.0) -> Account:
     active_sales = int(active_sales.text) if active_sales else 0
 
     balance = parser.find("span", {"class": "badge badge-balance"})
-    balance = float(balance.text.split(" ")[0]) if balance else 0
+    balance_count = float(balance.text.split(" ")[0]) if balance else 0
+    balance_currency = balance.text.split(" ")[1]  if balance else None
 
     cookies = response.cookies.get_dict()
     session_id = cookies["PHPSESSID"]
 
-    return Account(app_data=app_data, id=userid, username=username, balance=balance, active_sales=active_sales,
+    return Account(app_data=app_data, id=userid, username=username, balance=balance_count, currency=balance_currency,
+                   active_sales=active_sales,
                    csrf_token=csrf_token, session_id=session_id, last_update=int(time.time()))
 
 
@@ -78,6 +83,7 @@ def get_account_orders(token: str,
                        timeout: float = 10.0) -> dict[str, Order]:
     """
     Получает список заказов на аккаунте.
+
     :param token: golden_key (токен) аккаунта.
     :param session_id: PHPSESSID.
     :param include_outstanding: включить в список оплаченные (но не завершенные) заказы.
@@ -143,6 +149,7 @@ def get_game_id_by_category_id(token: str, category_id: int, category_type: Cate
                                timeout: float = 10.0) -> int:
     """
     Получает ID игры, к которой относится категория.
+
     :param token: golden_key (токен) аккаунта.
     :param category_id: ID категории, ID игры которой нужно получить.
     :param category_type: тип категории.

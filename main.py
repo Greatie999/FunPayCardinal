@@ -8,6 +8,8 @@ import Utils.config_loader as cfg_loader
 from Utils.logger import Logger, LogTypes
 import Utils.exceptions as excs
 
+from cardinal import Cardinal
+
 
 CFG_LOADER_PREFIX = f"{Fore.YELLOW}{Back.RED}[Cfg loader]"
 MAIN_PREFIX = f"{Back.RED}[Main]"
@@ -66,3 +68,12 @@ except Exception as e:
         logger.log(line, TRACEBACK_PREFIX, LogTypes.TRACEBACK)
     logger.log("Завершаю программу...", MAIN_PREFIX, LogTypes.WARN)
     exit()
+
+# Запускаем основную программу Cardinal
+main_program = Cardinal(
+    MAIN_CONFIG,
+    LOTS_CONFIG,
+    AUTO_RESPONSE_CONFIG,
+    AUTO_DELIVERY_CONFIG,
+    logger)
+main_program.init()

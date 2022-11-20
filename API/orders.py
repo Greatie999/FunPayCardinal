@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from .enums import OrderStatuses
 
 
-@dataclass(frozen=True)
+@dataclass
 class Order:
     """
     Дата-класс, описывающий заказ.\n
