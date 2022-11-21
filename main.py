@@ -77,3 +77,4 @@ main_program = Cardinal(
     AUTO_DELIVERY_CONFIG,
     logger)
 main_program.init()
+main_program.run()

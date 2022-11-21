@@ -1,14 +1,14 @@
-import os
-import json
 import time
 import configparser
-from colorama import Fore, Back, Style
-from datetime import datetime
+from colorama import Fore, Back
+from threading import Thread
 
-import API.users
-import API.account
-import API.categories
+import FunPayAPI.users
+import FunPayAPI.account
+import FunPayAPI.categories
 from Utils.logger import Logger, LogTypes
+
+import cardinal_tools
 
 
 class Cardinal:
@@ -33,8 +33,13 @@ class Cardinal:
 
         # Прочее
         self.running = False
-        self.account: API.account = None
-        self.categories = None
+        self.account: FunPayAPI.account.Account | None = None
+
+        # Категории
+        self.categories: list[FunPayAPI.categories.Category] | None = None
+        # ID игр категорий. Нужно для проверки возможности поднять ту или иную категорию.
+        # Формат хранения: {ID игры: следующее время поднятия}
+        self.game_ids = {}
 
     def init(self):
         self.__init_account()
@@ -43,8 +48,8 @@ class Cardinal:
     def __init_account(self):
         while True:
             try:
-                self.account = API.account.get_account_data(self.main_config["Settings"]["token"])
-                greeting_text = create_greetings(self.account)
+                self.account = FunPayAPI.account.get_account(self.main_config["Settings"]["token"])
+                greeting_text = cardinal_tools.create_greetings(self.account)
                 for line in greeting_text.split("\n"):
                     self.logger.log(line, self.__CARDINAL_PREFIX)
                 break
@@ -59,13 +64,14 @@ class Cardinal:
         """
         Загружает данные о категориях аккаунта + восстанавливает game_id каждой категории из кэша, либо
         отправляет дополнительные запросы к FunPay.
+
         :return: None
         """
-        cached_categories = load_cached_categories()
+        cached_categories = cardinal_tools.load_cached_categories()
         # Получаем категории аккаунта.
         while True:
             try:
-                user_categories = API.users.get_user_categories(self.account.id, include_currency=False)
+                user_categories = FunPayAPI.users.get_user_categories(self.account.id, include_currency=False)
                 self.logger.log(f"Получил категории аккаунта. Всего категорий: {len(user_categories)}",
                                 self.__CARDINAL_PREFIX)
                 break
@@ -78,6 +84,7 @@ class Cardinal:
 
         # Привязываем к каждой категории её game_id. Если категория кэширована - берем game_id из кэша,
         # если нет - делаем запрос.
+        # Так же добавляем game_id категории в self.game_ids
         self.logger.log("Получаю доп. данные о категориях...", self.__CARDINAL_PREFIX, LogTypes.WARN)
         for index, cat in enumerate(user_categories):
             cached_category_name = f"{cat.id}_{cat.type.value}"
@@ -93,8 +100,7 @@ class Cardinal:
                             self.__CARDINAL_PREFIX, LogTypes.WARN)
             while True:
                 try:
-                    game_id = API.account.get_game_id_by_category_id(self.main_config["Settings"]["token"],
-                                                                     cat.id, cat.type)
+                    game_id = self.account.get_category_game_id(cat)
                     user_categories[index].game_id = game_id
                     self.logger.log(f"Доп. данные о категории \"{cat.title}\" получены!",
                                     self.__CARDINAL_PREFIX)
@@ -107,88 +113,81 @@ class Cardinal:
 
         self.categories = user_categories
         self.logger.log("Кэширую данные о категориях...", self.__CARDINAL_PREFIX, LogTypes.WARN)
-        cache_categories(self.categories)
+        cardinal_tools.cache_categories(self.categories)
 
+    def raise_lots(self) -> int:
+        """
+        Пытается поднять лоты.
+        :return: предположительно время, когда нужно снова запустить данную функцию.
+        """
+        # Минимальное время до следующего вызова данной функции.
+        min_next_time = -1
+        for cat in self.categories:
+            # Если game_id данной категории уже находится в self.game_ids, но время поднятия категорий
+            # данной игры еще не настало - пропускам эту категорию.
+            if cat.game_id in self.game_ids and self.game_ids[cat.game_id] > int(time.time()):
+                if min_next_time == -1 or self.game_ids[cat.game_id] < min_next_time:
+                    min_next_time = self.game_ids[cat.game_id]
+                continue
+
+            # В любом другом случае пытаемся поднять лоты всех категорий, относящихся к игре cat.game_id
+            try:
+                response = self.account.raise_game_categories(cat)
+                self.logger.log(str(response), self.__CARDINAL_PREFIX, LogTypes.WARN)
+                self.logger.log(str(response["response"]), self.__CARDINAL_PREFIX, LogTypes.WARN)
+            except:
+                min_next_time = int(time.time())
+                continue
+                # todo: добавить обработку исключений.
+            if not response["complete"]:
+                self.logger.log(f"Не удалось поднять категорию \"{cat.title}\". "
+                                f"Попробую еще раз через {response['wait']} секунд(-ы/-у).", self.__CARDINAL_PREFIX,
+                                LogTypes.WARN)
+                next_time = int(time.time()) + response["wait"]
+                self.game_ids[cat.game_id] = next_time
+                if min_next_time == -1 or next_time < min_next_time:
+                    min_next_time = next_time
+            else:
+                self.logger.log(f"Поднял все категории игры с ID \"{cat.game_id}\". "
+                                f"Попробую еще раз через {response['wait']} секунд(-ы/-у). ", self.__CARDINAL_PREFIX)
+                next_time = int(time.time()) + response['wait']
+                self.game_ids[cat.game_id] = next_time
+                if min_next_time == -1 or next_time < min_next_time:
+                    min_next_time = next_time
+        return min_next_time
+
+    # Бесконечные циклы.
+    def start_raise_lots_loop(self):
+        """
+        Запускает бесконечный цикл поднятия категорий (если autoRaise в _main.cfg == 1)
+        :return:
+        """
+        if not int(self.main_config["Settings"]["autoRaise"]):
+            return
+        self.logger.log("Авто-поднятие лотов запущено.", self.__CARDINAL_PREFIX)
+        while True and self.running:
+            try:
+                next_time = self.raise_lots()
+            except:
+                time.sleep(10)
+                self.logger.log("err", self.__CARDINAL_PREFIX, LogTypes.ERROR)
+                continue
+            delay = next_time - int(time.time())
+            if delay < 0:
+                delay = 0
+            time.sleep(delay)
 
     def run(self):
+        """
+        Запускает все потоки.
+        :return:
+        """
         self.running = True
-        pass
+        Thread(target=self.start_raise_lots_loop).start()
 
     def stop(self):
+        """
+        Останавливает все потоки.
+        :return:
+        """
         self.running = False
-        pass
-
-
-def cache_categories(category_list: list[API.categories.Category]) -> None:
-    """
-    Кэширует данные о категориях аккаунта в файл storage/cache/categories.json. Необходимо для того, чтобы каждый раз
-    при запуске бота не отправлять запросы на получение game_id каждой категории.
-    :param category_list: список категорий, которые необходимо кэшировать.
-    :return: None
-    """
-    result = {}
-    for cat in category_list:
-        # Если у объекта категории game_id = None, то и нет смысла кэшировать данную категорию.
-        if cat.game_id is None:
-            continue
-
-        # Имя категории для кэширования = id категории_тип категории (lot - 0, currency - 1).
-        # Например:
-        # 146_0 = https://funpay.com/lots/146/
-        # 146_1 = https://funpay.com/chips/146/
-        category_cached_name = f"{cat.id}_{cat.type.value}"
-        result[category_cached_name] = cat.game_id
-
-    # Создаем папку для хранения кэшированных данных.
-    if not os.path.exists("storage/cache"):
-        os.makedirs("storage/cache")
-
-    # Записываем данные в кэш.
-    with open("storage/cache/categories.json", "w", encoding="utf-8") as f:
-        f.write(json.dumps(result, indent=4))
-
-
-def load_cached_categories() -> dict:
-    """
-    Загружает данные о категориях аккаунта из файла storage/cache/categories.json. Необходимо для того, чтобы каждый раз
-    при запуске бота не отправлять запросы на получение game_id каждой категории.
-    :return: словарь загруженных категорий.
-    """
-    if not os.path.exists("storage/cache/categories.json"):
-        return {}
-
-    with open("storage/cache/categories.json", "r", encoding="utf-8") as f:
-        cached_categories = f.read()
-
-    try:
-        cached_categories = json.loads(cached_categories)
-    except json.decoder.JSONDecodeError:
-        return {}
-    return cached_categories
-
-
-def create_greetings(account: API.account):
-    """
-    Генерирует приветствие для вывода в консоль после загрузки данных о пользователе.
-    :return:
-    """
-    current_time = datetime.now()
-    if current_time.hour < 12:
-        greetings = "Доброе утро"
-    elif current_time.hour < 17:
-        greetings = "Добрый день"
-    elif current_time.hour < 24:
-        greetings = "Добрый вечер"
-    elif current_time.hour < 4:
-        greetings = "Добрая ночь"
-    else:
-        greetings = "Доброе утро"
-
-    currency = account.currency if f" {account.currency}" is not None else ""
-
-    greetings_text = f"""{greetings}, {Fore.CYAN}{account.username}.
-Ваш ID: {Fore.YELLOW}{account.id}.
-Ваш текущий баланс: {Fore.YELLOW}{account.balance}{currency}.
-Текущие незавершенные сделки: {Fore.YELLOW}{account.active_sales}.
-{Fore.MAGENTA}Удачной торговли!"""
-    return greetings_text
