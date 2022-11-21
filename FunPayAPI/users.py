@@ -1,3 +1,6 @@
+"""
+В этом модуле написаны функции для получения тех или иных данных о пользователе FunPay, для которых не требуется токен.
+"""
 from bs4 import BeautifulSoup
 import requests
 
@@ -11,10 +14,9 @@ def get_user_categories(user_id: int, include_currency: bool = False, timeout: f
     нельзя поднять).
 
     :param user_id: ID пользователя, категории лотов которого нужно получить.
-    :param include_currency: включить ли в возвращаемый список лоты из категории игровой валюты.
-    :param timeout: тайм-аут выполнения запроса.
-    :return: список с числовыми ID категорий.
-    (ID категории берется из ссылки https://funpay.com/lots/id категории/trade)
+    :param include_currency: включить ли в возвращаемый список лоты с игровой валютой.
+    :param timeout: тайм-аут ожидания ответа.
+    :return: список категорий пользователя.
     """
     response = requests.get(f"{Links.USER}/{user_id}/", timeout=timeout)
     if response.status_code == 404:
@@ -31,10 +33,8 @@ def get_user_categories(user_id: int, include_currency: bool = False, timeout: f
         category_link = div.find("a")
         public_link = category_link["href"]
         if "chips" in public_link:
-            """
-            'chips' в ссылке означает, что данная категория - игровая валюта. Например:
-            https://funpay.com/chips/125/ - Серебро Black Desert Mobile
-            """
+            # 'chips' в ссылке означает, что данная категория - игровая валюта.
+            # Например: https://funpay.com/chips/125/ - Серебро Black Desert Mobile.
             if not include_currency:
                 continue
             category_type = CategoryTypes.CURRENCY

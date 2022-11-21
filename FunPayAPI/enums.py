@@ -5,6 +5,7 @@ class Links:
     BASE_URL = "https://funpay.com"
     ORDERS = "https://funpay.com/orders/trade"
     USER = "https://funpay.com/users"
+    RAISE = "https://funpay.com/lots/raise"
     RUNNER = "https://funpay.com/runner"
 
 
