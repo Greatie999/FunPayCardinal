@@ -6,7 +6,7 @@ class Links:
     ORDERS = "https://funpay.com/orders/trade"
     USER = "https://funpay.com/users"
     RAISE = "https://funpay.com/lots/raise"
-    RUNNER = "https://funpay.com/runner"
+    RUNNER = "https://funpay.com/runner/"
 
 
 class OrderStatuses(Enum):
