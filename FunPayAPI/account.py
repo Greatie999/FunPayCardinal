@@ -49,6 +49,39 @@ class Account:
         self.session_id = session_id
         self.last_update = last_update
 
+    def send_message(self, node_id: int, text: str):
+        """
+        Отправляет сообщение в переписку с ID node_id.
+        :param node_id: ID переписки.
+        :param text: текст сообщения.
+        :return: ответ сервера FunPay.
+        """
+        if not text.strip():
+            raise Exception  # todo: создать и добавить кастомное исключение: пустое сообщение.
+
+        headers = {
+            "accept": "*/*",
+            "cookie": f"golden_key={self.golden_key}; PHPSESSID={self.session_id}",
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "x-requested-with": "XMLHttpRequest"
+        }
+        request = {
+            "action": "chat_message",
+            "data": {
+                "node": node_id,
+                "last_message": -1,
+                "content": text
+            }
+        }
+        payload = {
+            "objects": "",
+            "request": json.dumps(request),
+            "csrf_token": self.csrf_token
+        }
+        response = requests.post(Links.RUNNER, headers=headers, data=payload)
+        json_response = response.json()
+        return json_response
+
     def get_account_orders(self,
                            include_outstanding: bool = True,
                            include_completed: bool = False,
