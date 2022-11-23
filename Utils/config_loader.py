@@ -116,9 +116,9 @@ def load_main_config(config_path: str) -> configparser.ConfigParser:
 
 def load_lots_config(config_path: str) -> configparser.ConfigParser:
     """
-    Парсит и проверяет на правильность конфиг с лотами.
+    Парсит и проверяет на правильность конфиг лотов.
 
-    :param config_path: путь до файла с лотами.
+    :param config_path: путь до конфига лотов.
     :return: спарсеный конфиг лотов.
     """
     config = configparser.ConfigParser()
@@ -132,9 +132,9 @@ def load_lots_config(config_path: str) -> configparser.ConfigParser:
 
 def load_auto_response_config(config_path: str) -> configparser.ConfigParser:
     """
-    Парсит и проверяет на правильность конфиг с командами.
+    Парсит и проверяет на правильность конфиг команд.
 
-    :param config_path: путь до файла с лотами.
+    :param config_path: путь до конфига команд.
     :return: спарсеный конфиг команд.
     """
     config = configparser.ConfigParser()
@@ -146,12 +146,10 @@ def load_auto_response_config(config_path: str) -> configparser.ConfigParser:
 
 def load_auto_delivery_config(config_path: str) -> configparser.ConfigParser:
     """
-    Парсит и проверяет на правильность конфиг с товарами для авто-выдачи.
+    Парсит и проверяет на правильность конфиг авто-выдачи.
 
-    :param config_path: путь до файла с лотами.
+    :param config_path: путь до конфига авто-выдачи.
     :return: спарсеный конфиг товаров для авто-выдачи.
-    :param config_path:
-    :return:
     """
     config = configparser.ConfigParser()
     config.read_file(codecs.open(config_path, "r", "utf8"))

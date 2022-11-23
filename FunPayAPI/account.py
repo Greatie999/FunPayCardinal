@@ -17,6 +17,7 @@ class RaiseCategoriesResponse(TypedDict):
     """
     complete: bool
     wait: int
+    raised_category_names: list[str]
     response: dict
 
 
@@ -52,6 +53,7 @@ class Account:
     def send_message(self, node_id: int, text: str):
         """
         Отправляет сообщение в переписку с ID node_id.
+
         :param node_id: ID переписки.
         :param text: текст сообщения.
         :return: ответ сервера FunPay.
@@ -189,6 +191,7 @@ class Account:
         !ВНИМЕНИЕ! Для отправки запроса необходимо, чтобы category.game_id != None.
         !ВНИМАНИЕ! Если на аккаунте только 1 категория, относящаяся к игре category.game_id,
         то FunPay поднимет данную категорию в списке без появления modal-формы с выбором других категорий.
+
         :param category: экземпляр класса Category.
         :param timeout: тайм-аут получения ответа.
         :return: ответ FunPay.
@@ -215,6 +218,7 @@ class Account:
         """
         Поднимает лоты всех категорий игры category.game_id.
         !ВНИМЕНИЕ! Для поднятия лотов необходимо, чтобы category.game_id != None
+
         :param category: экземпляр класса Category.
         :param exclude: список из названий категорий, которые не нужно поднимать.
         :param timeout: тайм-аут ожидания ответа.
@@ -223,25 +227,27 @@ class Account:
         check = self.request_lots_raise(category, timeout)
         if check.get("error") and check.get("msg") and "Подождите" in check.get("msg"):
             wait_time = get_wait_time_from_raise_response(check.get("msg"))
-            return {"complete": False, "wait": wait_time, "response": check}
+            return {"complete": False, "wait": wait_time, "raised_category_names": [], "response": check}
         elif check.get("error"):
             # Если вернулся ответ с ошибкой и это не "Подождите n времени" - значит творится какая-то дичь.
-            return {"complete": False, "wait": 10, "response": check}
+            return {"complete": False, "wait": 10, "raised_category_names": [], "response": check}
         elif check.get("error") is not None and not check.get("error"):
             # Если была всего 1 категория и FunPay ее поднял без отправки modal-окна
             print("1 cat")
-            return {"complete": True, "wait": 3600, "response": check}
+            return {"complete": True, "wait": 3600, "raised_category_names": [category.title], "response": check}
         elif check.get("modal"):
             # Если же появилась модалка, то парсим все чекбоксы и отправляем запрос на поднятие всех категорий, кроме тех,
             # которые в exclude.
             parser = BeautifulSoup(check.get("modal"), "lxml")
             category_ids = []
-            checkboxes = parser.find_all("input", {"type": "checkbox"})
+            category_names = []
+            checkboxes = parser.find_all("div", {"class": "checkbox"})
             for cb in checkboxes:
-                category_id = cb.get("value")
-                if category_id is not None:
-                    if (exclude is not None and category_id not in exclude) or exclude is None:
-                        category_ids.append(category_id)
+                category_id = cb.find("input")["value"]
+                if (exclude is not None and category_id not in exclude) or exclude is None:
+                    category_ids.append(category_id)
+                    category_name = cb.find("label").text
+                    category_names.append(category_name)
 
             headers = {
                 "accept": "*/*",
@@ -256,9 +262,9 @@ class Account:
             }
             response = requests.post(Links.RAISE, headers=headers, data=payload, timeout=timeout).json()
             if not response.get("error"):
-                return {"complete": True, "wait": 3600, "response": response}
+                return {"complete": True, "wait": 3600, "raised_category_names": category_names, "response": response}
             else:
-                return {"complete": False, "wait": 10, "response": response}
+                return {"complete": False, "wait": 10, "raised_category_names": [], "response": response}
 
 
 def get_account(token: str, timeout: float = 10.0) -> Account:

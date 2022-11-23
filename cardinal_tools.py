@@ -61,14 +61,14 @@ def create_greetings(account: FunPayAPI.account):
     :return:
     """
     current_time = datetime.now()
-    if current_time.hour < 12:
+    if current_time.hour < 4:
+        greetings = "Какая прекрасная ночь"
+    elif current_time.hour < 12:
         greetings = "Доброе утро"
     elif current_time.hour < 17:
         greetings = "Добрый день"
     elif current_time.hour < 24:
         greetings = "Добрый вечер"
-    elif current_time.hour < 4:
-        greetings = "Добрая ночь"
     else:
         greetings = "Доброе утро"
 
@@ -80,3 +80,28 @@ def create_greetings(account: FunPayAPI.account):
 Текущие незавершенные сделки: {Fore.YELLOW}{account.active_sales}.
 {Fore.MAGENTA}Удачной торговли!"""
     return greetings_text
+
+
+def get_month_name(month_number: int) -> str:
+    """
+    Возвращает название месяца в родительном падеже.
+    :param month_number: номер месяца.
+    :return: название месяца в родительном падеже.
+    """
+    months = [
+        "Января",
+        "Февраля",
+        "Марта",
+        "Апреля",
+        "Мая",
+        "Июня",
+        "Июля",
+        "Августа",
+        "Сентября",
+        "Октября",
+        "Ноября",
+        "Декабря"
+    ]
+    if month_number > len(months):
+        return months[0]
+    return months[month_number-1]

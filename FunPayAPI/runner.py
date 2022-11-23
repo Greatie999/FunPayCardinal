@@ -1,15 +1,25 @@
 import json
 import requests
-from typing import Callable
 from bs4 import BeautifulSoup
 
 from .other import gen_rand_tag
 from .account import Account
-from .enums import Links
+from .enums import Links, EventTypes, OrderStatuses
 
 
-class Message:
-    def __init__(self, node_id: int, message_text: str, sender_username: str, send_time: str, tag: str):
+class Event:
+    def __init__(self, e_type: EventTypes):
+        self.type = e_type
+
+
+class MessageEvent(Event):
+    def __init__(self,
+                 node_id: int,
+                 message_text: str,
+                 sender_username: str,
+                 send_time: str,
+                 tag: str):
+        super(MessageEvent, self).__init__(EventTypes.NEW_MESSAGE)
         self.node_id = node_id
         self.sender_username = sender_username
         self.message_text = message_text
@@ -17,11 +27,25 @@ class Message:
         self.tag = tag
 
 
+class OrderEvent(Event):
+    def __init__(self,
+                 id_: str,
+                 title: str,
+                 price: float,
+                 buyer_username: str,
+                 buyer_id: int,
+                 status: OrderStatuses):
+        super(OrderEvent, self).__init__(EventTypes.NEW_ORDER)
+        self.id = id_
+        self.title = title
+        self.price = price
+        self.buyer_name = buyer_username
+        self.buyer_id = buyer_id
+        self.status = status
+
+
 class Runner:
     def __init__(self, account: Account, timeout: float = 10.0):
-        self.new_message_event_handlers: list[Callable] = []
-        self.new_order_event_handlers: list[Callable] = []
-
         self.message_tag: str = gen_rand_tag()
         self.order_tag: str = gen_rand_tag()
         self.first_request = True
@@ -29,9 +53,10 @@ class Runner:
         self.account = account
         self.timeout = timeout
 
-        self.last_messages: dict[int, Message] = {}
+        self.last_messages: dict[int, MessageEvent] = {}
+        self.processed_orders: dict[str, OrderEvent] = {}
 
-    def get_updates(self):
+    def get_updates(self) -> list[MessageEvent, OrderEvent]:
         orders = {
             "type": "orders_counters",
             "id": self.account.id,
@@ -57,7 +82,7 @@ class Runner:
         }
         response = requests.post(Links.RUNNER, headers=headers, data=payload, timeout=self.timeout)
         json_response = response.json()
-        print(json_response)
+        events = []
         for obj in json_response["objects"]:
             if obj.get("type") == "orders_counters":
                 self.order_tag = obj.get("tag")
@@ -79,24 +104,15 @@ class Runner:
 
                     sender_username = msg.find("div", {"class": "media-user-name"}).text
 
-                    msg_object = Message(node_id=node_id, message_text=message_text, sender_username=sender_username,
-                                         send_time=send_time, tag=self.message_tag)
+                    msg_object = MessageEvent(node_id=node_id, message_text=message_text, sender_username=sender_username,
+                                              send_time=send_time, tag=self.message_tag)
                     self.last_messages[node_id] = msg_object
                     if self.first_request:
                         continue
-                    run_handlers(self.new_message_event_handlers, [msg_object])
+                    events.append(msg_object)
             else:
                 continue
         if self.first_request:
             self.first_request = False
 
-    def subscribe_on_new_message_event(self, handler: Callable):
-        self.new_message_event_handlers.append(handler)
-
-    def subscribe_on_new_order_event(self, handler: Callable):
-        self.new_order_event_handlers.append(handler)
-
-
-def run_handlers(handler_list: list[Callable], args: list):
-    for func in handler_list:
-        func(*args)
+        return events

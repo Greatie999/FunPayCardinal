@@ -18,3 +18,8 @@ class OrderStatuses(Enum):
 class CategoryTypes(Enum):
     LOT = 0
     CURRENCY = 1
+
+
+class EventTypes(Enum):
+    NEW_MESSAGE = 0
+    NEW_ORDER = 0

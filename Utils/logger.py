@@ -1,85 +1,72 @@
 import re
-from colorama import Fore, Back, Style
-from datetime import datetime
 import logging
-import os
-from enum import Enum
+import logging.handlers
+from colorama import Fore, Back, Style
 
 
-MAX_PREFIX_LENGTH = 14
+class CLILoggerFormatter(logging.Formatter):
+    """
+    Форматтер для вывода логов в консоль.
+    """
+    log_format = f"{Fore.BLACK + Style.BRIGHT}[%(asctime)s]{Style.RESET_ALL}" \
+                 f"{Fore.CYAN}>{Style.RESET_ALL} $color%(levelname)s:$spaces %(message)s{Style.RESET_ALL}"
+
+    colors = {
+        logging.DEBUG: Fore.BLACK + Style.BRIGHT,
+        logging.INFO: Fore.GREEN,
+        logging.WARN: Fore.YELLOW,
+        logging.ERROR: Fore.RED,
+        logging.CRITICAL: Back.RED
+    }
+
+    time_format = "%Y-%m-%d %H:%M:%S"
+    max_level_name_length = 10
+
+    def __init__(self):
+        super(CLILoggerFormatter, self).__init__()
+
+    def format(self, record: logging.LogRecord) -> str:
+        log_format = self.log_format.replace("$color", self.colors[record.levelno])\
+            .replace("$spaces", " " * (self.max_level_name_length - len(record.levelname)))
+        formatter = logging.Formatter(log_format, self.time_format)
+        return formatter.format(record)
 
 
-class LogTypes(Enum):
-    DONE = Fore.GREEN
-    WARN = Fore.YELLOW
-    ERROR = Fore.RED
-    TRACEBACK = Fore.BLACK + Style.BRIGHT
-    NEUTRAL = Fore.WHITE
+class FileLoggerFormatter(logging.Formatter):
+    """
+    Форматтер для сохранения логов в файл.
+    """
+    log_format = "[%(asctime)s][%(filename)s][%(funcName)s][%(lineno)d]> %(levelname)s: %(message)s"
+    max_level_name_length = 12
+    clear_expression = re.compile(r"(\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]))|(\n)|(\r)")
+
+    def __init__(self):
+        super(FileLoggerFormatter, self).__init__()
+
+    def format(self, record: logging.LogRecord) -> str:
+        msg = record.getMessage()
+        msg = self.clear_expression.sub("", msg)
+        record.msg = msg
+        formatter = logging.Formatter(self.log_format)
+        return formatter.format(record)
 
 
-class Logger:
-    def __init__(self, to_file: bool = True):
-        self.__prefix = f"{Back.LIGHTBLACK_EX}[Logger]"
-        self.to_file = to_file
-        self.log_file_name = datetime.now().strftime("%d-%m-%Y-%H-%M-%S.txt")
-        if self.to_file:
-            if not os.path.exists("logs"):
-                os.mkdir("logs")
-            logging.basicConfig(filename=f"logs\\{self.log_file_name}", encoding="utf-8", level=logging.INFO)
+def init_logger(name: str, log_path: str) -> None:
+    """
+    Создает логгер.
+    :param name: название логгера.
+    :param log_path: путь до файла с логами.
+    :return:
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
 
-        self.logs = []
-        self.last_log = ""
-        self.printing = False
-        self.clear_expression = re.compile(r"(\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]))|(\n)|(\r)")
+    cli_handler = logging.StreamHandler()
+    cli_handler.setFormatter(CLILoggerFormatter())
+    cli_handler.setLevel(logging.INFO)
+    logger.addHandler(cli_handler)
 
-        self.log("Логгер успешно инициализирован.", self.__prefix)
-
-    def log(self, text: str, prefix: str, log_type: LogTypes = LogTypes.DONE) -> None:
-        """
-        Добавляет лог в очередь. В последствии будет выведен в консоль и сохранен в файл с помощью Logger.__print_logs()
-        Формат лога: [Номер аккаунта][Время]  [Префикс]  Текст лога
-        :param text: Основной текст лога.
-        :param prefix: Префикс (имя) модуля, откуда пришел лог.
-        :param log_type: Тип лога. Значение от 0 до 4.
-        :return: None
-        """
-
-        row_prefix = self.clear_text(prefix)
-        pre_space = int((MAX_PREFIX_LENGTH - len(row_prefix)) / 2)
-        post_space = MAX_PREFIX_LENGTH - len(row_prefix) - pre_space
-        prefix = f"{' ' * pre_space}{prefix}{Style.RESET_ALL}{' ' * post_space}"
-
-        self.logs.append(f"{Fore.LIGHTBLACK_EX}[{datetime.now().strftime('%d-%m-%Y %H:%M:%S.%f')[:-3]}]{Style.RESET_ALL}"
-                         f"{prefix}"
-                         f"{log_type.value}{text.replace('$color', str(log_type.value))}{Style.RESET_ALL}")
-        self.__print_logs()
-
-    def clear_text(self, text: str) -> str:
-        """
-        Убирает из текста все ANSI ESC символы (цвета и т.д.), а так же символы для работы с кареткой (\n, \r).
-        :param text: Строка, которую необходимо очистить.
-        :return: Строку без ANSI ESC символов и без символов для работы с кареткой.
-        """
-        return self.clear_expression.sub("", text)
-
-    def __print_logs(self) -> None:
-        """
-        Выводит в консоль и добавляет в файл логи из self.logs.
-        :return: None
-        """
-        if self.printing:
-            return
-        self.printing = True
-        if len(self.logs):
-            for _ in self.logs:
-                text = self.logs.pop(0)
-                if "\r" in text:
-                    print(text, end="")
-                elif "\r" not in text and "\r" in self.last_log:
-                    print(f"\n{text}")
-                else:
-                    print(text)
-                self.last_log = text
-                if self.to_file:
-                    logging.info(self.clear_text(text))
-        self.printing = False
+    file_handler = logging.handlers.TimedRotatingFileHandler(filename=log_path, when="midnight", encoding="utf-8")
+    file_handler.setFormatter(FileLoggerFormatter())
+    file_handler.setLevel(logging.DEBUG)
+    logger.addHandler(file_handler)
