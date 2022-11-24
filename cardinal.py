@@ -285,10 +285,10 @@ class Cardinal:
         for events in self.listen_runner():
             for event in events:
                 if event.type == FunPayAPI.enums.EventTypes.NEW_MESSAGE:
-                    self.run_handlers(self.message_event_handlers, [event])
+                    self.run_handlers(self.message_event_handlers, [event, ])
 
                 elif event.type == FunPayAPI.enums.EventTypes.NEW_ORDER:
-                    self.run_handlers(self.orders_event_handlers, [event])
+                    self.run_handlers(self.orders_event_handlers, [event, ])
 
     # Встроенные хэндлеры
     def send_response(self, msg: FunPayAPI.runner.MessageEvent):
@@ -392,7 +392,6 @@ class Cardinal:
         cats_text = "".join(f"\"{i}\", " for i in category_names).strip()[:-1]
         self.telegram.send_notification(f"Поднял категории: {cats_text}. (ID игры: {game_id}\n"
                                         f"Попробую еще раз через {wait_time} секунд(-ы/-у).")
-        self.telegram.send_notification(cats_text)
 
     # Функции запуска / остановки Кардинала.
     def init(self):
@@ -426,7 +425,7 @@ class Cardinal:
         self.running = False
 
     # Прочее
-    def run_handlers(self, handlers: list[Callable], *args) -> None:
+    def run_handlers(self, handlers: list[Callable], args) -> None:
         """
         Выполняет функции из списка handlers.
         :param handlers: Список функций.

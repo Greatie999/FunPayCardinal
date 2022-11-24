@@ -102,7 +102,7 @@ CONFIG = {
         },
         "TeleBot": {
             "handlers": ["file_handler"],
-            "level": "DEBUG",
+            "level": "ERROR",
             "propagate": "False"
         }
     }
