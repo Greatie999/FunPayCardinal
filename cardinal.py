@@ -56,8 +56,8 @@ class Cardinal:
         self.bot_init_handlers: list[Callable] = []
         self.bot_start_handlers: list[Callable] = []
         self.bot_stop_handlers: list[Callable] = []
-        self.message_event_handlers: list[Callable] = []
-        self.orders_event_handlers: list[Callable] = []
+        self.message_event_handlers: list[Callable[[FunPayAPI.runner.MessageEvent], any]] = []
+        self.orders_event_handlers: list[Callable[[FunPayAPI.runner.OrderEvent], any]] = []
         self.raise_lots_handlers: list[Callable] = []
 
     # Инициирование
@@ -370,7 +370,10 @@ class Cardinal:
         if self.telegram is None or msg.message_text.strip() not in self.auto_response_config:
             return
 
-        if int(self.auto_response_config[msg.message_text]["telegramNotification"]):
+        if self.auto_response_config[msg.message_text].get("telegramNotification") is not None:
+            if not int(self.auto_response_config[msg.message_text]["telegramNotification"]):
+                return
+
             if self.auto_response_config[msg.message_text].get("notificationText") is None:
                 text = f"Пользователь {msg.sender_username} ввел команду \"{msg.message_text}\"."
             else:
