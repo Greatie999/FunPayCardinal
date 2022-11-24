@@ -26,6 +26,9 @@ class CLILoggerFormatter(logging.Formatter):
         super(CLILoggerFormatter, self).__init__()
 
     def format(self, record: logging.LogRecord) -> str:
+        msg = record.getMessage()
+        msg = msg.replace("$color", self.colors[record.levelno])
+        record.msg = msg
         log_format = self.log_format.replace("$color", self.colors[record.levelno])\
             .replace("$spaces", " " * (self.max_level_name_length - len(record.levelname)))
         formatter = logging.Formatter(log_format, self.time_format)
@@ -51,22 +54,50 @@ class FileLoggerFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-def init_logger(name: str, log_path: str) -> None:
-    """
-    Создает логгер.
-    :param name: название логгера.
-    :param log_path: путь до файла с логами.
-    :return:
-    """
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+CONFIG = {
+    "version": 1,
+    "handlers": {
+        "file_handler": {
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "level": "DEBUG",
+            "formatter": "file_formatter",
+            "filename": "logs/log.log",
+            "when": "midnight",
+            "encoding": "utf-8"
+        },
 
-    cli_handler = logging.StreamHandler()
-    cli_handler.setFormatter(CLILoggerFormatter())
-    cli_handler.setLevel(logging.INFO)
-    logger.addHandler(cli_handler)
+        "cli_handler": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "cli_formatter"
+        }
+    },
 
-    file_handler = logging.handlers.TimedRotatingFileHandler(filename=log_path, when="midnight", encoding="utf-8")
-    file_handler.setFormatter(FileLoggerFormatter())
-    file_handler.setLevel(logging.DEBUG)
-    logger.addHandler(file_handler)
+    "formatters": {
+        "file_formatter": {
+            "()": "Utils.logger.FileLoggerFormatter"
+        },
+
+        "cli_formatter": {
+            "()": "Utils.logger.CLILoggerFormatter"
+        }
+    },
+
+    "loggers": {
+        "FunPayBot": {
+            "handlers": ["file_handler", "cli_handler"],
+            "level": "DEBUG"
+        },
+        "FunPayAPI": {
+            "handlers": ["file_handler", "cli_handler"],
+            "level": "DEBUG"
+        },
+        "TGBot": {
+            "handlers": ["file_handler", "cli_handler"],
+            "level": "DEBUG"
+        },
+        "TeleBot": {
+            "propagate": "False"
+        }
+    }
+}
