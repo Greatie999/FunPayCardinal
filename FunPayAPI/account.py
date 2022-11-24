@@ -49,6 +49,8 @@ class Account:
         self.csrf_token = csrf_token
         self.session_id = session_id
         self.last_update = last_update
+        # Сохраненные переписки. Для того, что бы при новом ордере заново не отправлять запрос на получение чатов.
+        self.chats_html: str | None = None
 
     def send_message(self, node_id: int, text: str):
         """
@@ -83,6 +85,22 @@ class Account:
         response = requests.post(Links.RUNNER, headers=headers, data=payload)
         json_response = response.json()
         return json_response
+
+    def get_node_id_by_username(self, username: str, force_request: bool = False) -> int | None:
+        """
+        Парсит self.chats_html и ищет node_id чата по username'у.
+        Если self.chats_html is None -> делает запрос на фанпей (будет сделано в будущем)
+        :param username: никнейм пользователя (искомого чата).
+        :param force_request: пропустить ли поиск в self.chats_html и отправить ли сразу запрос к FunPay.
+        :return: node_id чата или None, если чат не найден.
+        """
+        if not force_request and self.chats_html is not None:
+            parser = BeautifulSoup(self.chats_html, "lxml")
+            user_box = parser.find("div", {"class": "media-user-name"}, text=username)
+            if user_box is not None:
+                node_id = user_box.parent["data-id"]
+                return int(node_id)
+        return None
 
     def get_account_orders(self,
                            include_outstanding: bool = True,

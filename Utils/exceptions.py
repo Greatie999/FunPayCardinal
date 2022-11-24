@@ -1,3 +1,19 @@
+class SectionNotExists(Exception):
+    """
+    Исключение, которые райзится, когда необходимая секция отсутствует в конфиге.
+    """
+    def __init__(self, section_name: str, config_name: str):
+        """
+        :param section_name: название отсутствующей секции.
+        :param config_name: название конфига.
+        """
+        self.section_name = section_name
+        self.config_name = config_name
+
+    def __str__(self):
+        return f"Отсутствует обязательная секция \"{self.section_name}\" в конфиге {self.config_name}."
+
+
 class ParamNotExists(Exception):
     """
     Исключение, которое райзится, когда необходимы параметр отсутствует в секции конфига.
@@ -58,42 +74,6 @@ class ParamValueNotValid(Exception):
     def __str__(self):
         return f"Недопустимое значение параметра \"{self.param_name}\" в секции [{self.section_name}] " \
                f"конфига {self.config_name}. Допустимые значения: {self.valid_values}."
-
-
-class NoSuchTableError(Exception):
-    """
-    Исключение, которое райзится, когда указанная таблица отсутствует в базе данных.
-    """
-    def __init__(self, db_path: str, table_name: str):
-        """
-        :param db_path: путь до файла базы данных.
-        :param table_name: название таблицы.
-        """
-        self.db_path = db_path
-        self.table_name = table_name
-        super(NoSuchTableError, self).__init__()
-
-    def __str__(self):
-        return f"Таблица \"{self.table_name}\" отсутствует в базе данных {self.db_path}."
-
-
-class NoSuchColumnError(Exception):
-    """
-    Исключение, которое райзится, когда указанный столбец отсутствует в таблице.
-    """
-    def __init__(self, db_path: str, table_name: str, column_name: str):
-        """
-        :param db_path: путь до файла базы данных.
-        :param table_name: название таблицы.
-        :param column_name: название столбца.
-        """
-        self.db_path = db_path
-        self.table_name = table_name
-        self.column_name = column_name
-        super(NoSuchColumnError, self).__init__()
-
-    def __str__(self):
-        return f"Столбец \"{self.column_name}\" отсутствует в таблице \"{self.table_name}\" базы данных {self.db_path}."
 
 
 class NoProductsError(Exception):

@@ -1,10 +1,11 @@
 import json
 import requests
 from bs4 import BeautifulSoup
+import logging
 
 from .other import gen_rand_tag
 from .account import Account
-from .enums import Links, EventTypes, OrderStatuses
+from .enums import Links, EventTypes
 
 
 class Event:
@@ -28,20 +29,10 @@ class MessageEvent(Event):
 
 
 class OrderEvent(Event):
-    def __init__(self,
-                 id_: str,
-                 title: str,
-                 price: float,
-                 buyer_username: str,
-                 buyer_id: int,
-                 status: OrderStatuses):
+    def __init__(self, buyer: int, seller: int):
         super(OrderEvent, self).__init__(EventTypes.NEW_ORDER)
-        self.id = id_
-        self.title = title
-        self.price = price
-        self.buyer_name = buyer_username
-        self.buyer_id = buyer_id
-        self.status = status
+        self.buyer = buyer
+        self.seller = seller
 
 
 class Runner:
@@ -55,6 +46,9 @@ class Runner:
 
         self.last_messages: dict[int, MessageEvent] = {}
         self.processed_orders: dict[str, OrderEvent] = {}
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
 
     def get_updates(self) -> list[MessageEvent, OrderEvent]:
         orders = {
@@ -82,13 +76,19 @@ class Runner:
         }
         response = requests.post(Links.RUNNER, headers=headers, data=payload, timeout=self.timeout)
         json_response = response.json()
+        self.logger.debug(json_response)
         events = []
         for obj in json_response["objects"]:
             if obj.get("type") == "orders_counters":
                 self.order_tag = obj.get("tag")
+                if not self.first_request:
+                    info = obj.get("data")
+                    order_obj = OrderEvent(info.get("buyer"), info.get("seller"))
+                    events.append(order_obj)
 
             elif obj.get("type") == "chat_bookmarks":
                 self.message_tag = obj.get("tag")
+                self.account.chats_html = obj["data"]["html"]
                 parser = BeautifulSoup(obj["data"]["html"], "lxml")
                 messages = parser.find_all("a", {"class": "contact-item"})
                 for msg in messages:

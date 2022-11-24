@@ -22,4 +22,4 @@ class CategoryTypes(Enum):
 
 class EventTypes(Enum):
     NEW_MESSAGE = 0
-    NEW_ORDER = 0
+    NEW_ORDER = 1

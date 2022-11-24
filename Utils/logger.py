@@ -92,11 +92,17 @@ CONFIG = {
             "handlers": ["file_handler", "cli_handler"],
             "level": "DEBUG"
         },
+        "Cardinal": {
+            "handlers": ["file_handler", "cli_handler"],
+            "level": "DEBUG"
+        },
         "TGBot": {
             "handlers": ["file_handler", "cli_handler"],
             "level": "DEBUG"
         },
         "TeleBot": {
+            "handlers": ["file_handler"],
+            "level": "DEBUG",
             "propagate": "False"
         }
     }

@@ -3,8 +3,8 @@ import codecs
 import os
 import json
 
-from Utils.exceptions import (ParamNotExists, ParamValueEmpty, ParamValueNotValid,
-                              NoSuchTableError, NoSuchColumnError, NoProductsError, NoProductVarError,
+from Utils.exceptions import (SectionNotExists, ParamNotExists, ParamValueEmpty, ParamValueNotValid,
+                              NoProductsError, NoProductVarError,
                               NoSuchProductFileError, JSONParseError)
 
 
@@ -52,8 +52,45 @@ def check_param(param_name: str,
 
 
 def load_main_config(config_path: str) -> configparser.ConfigParser:
+    """
+    Парсит и проверяет на правильность основной конфиг.
+    :param config_path: путь до основного конфига.
+    :return: спарсеный основной конфиг.
+    """
     config = configparser.ConfigParser()
     config.read_file(codecs.open(config_path, "r", "utf8"))
+
+    values = {
+        "FunPay": {
+            "golden_key": "any",
+            "autoRaise": ["0", "1"],
+            "autoResponse": ["0", "1"],
+            "autoDelivery": ["0", "1"],
+            "autoRestore": ["0", "1"]
+        },
+        "Telegram": {
+            "enabled": ["0", "1"],
+            "token": "any",
+            "secretKey": "any",
+            "lotsRaiseNotification": ["0", "1"],
+            "productsDeliveryNotification": ["0", "1"],
+            "newMessageNotification": ["0", "1"]
+        },
+        "Other": {
+            "botName": "any"
+
+        }
+    }
+
+    for section in values:
+        if section not in config.sections():
+            raise SectionNotExists(section, "_main.cfg")
+
+        for param in values[section]:
+            if values[section][param] == "any":
+                check_param(param, section, "_main.cfg", config[section])
+            else:
+                check_param(param, section, "_main.cfg", config[section], valid_values=values[section][param])
     return config
 
 
@@ -83,6 +120,10 @@ def load_auto_response_config(config_path: str) -> configparser.ConfigParser:
     config.read_file(codecs.open(config_path, "r", "utf8"))
     for command in config.sections():
         check_param("response", command, "auto_response.cfg", config[command])
+        check_param("telegramNotification", command, "auto_response.cfg", config[command],
+                    valid_values=["0", "1"], raise_ex_if_not_exists=False)
+        check_param("notificationText", command, "auto_response.cfg", config[command], raise_ex_if_not_exists=False)
+
     return config
 
 

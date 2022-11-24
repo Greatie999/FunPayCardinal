@@ -1,20 +1,14 @@
-import logging
+import logging.config
 import os
 import sys
 import colorama
-from colorama import Fore, Back, Style
 import traceback
 
 import Utils.config_loader as cfg_loader
-import Utils.logger
+from Utils.logger import CONFIG
 import Utils.exceptions as excs
 
 from cardinal import Cardinal
-
-
-CFG_LOADER_PREFIX = f"{Fore.YELLOW}{Back.RED}[Cfg loader]"
-MAIN_PREFIX = f"{Back.RED}[Main]"
-TRACEBACK_PREFIX = f"{Fore.BLACK}{Style.BRIGHT}[Traceback]"
 
 
 def get_abs_path(path: str) -> str:
@@ -33,7 +27,7 @@ def get_abs_path(path: str) -> str:
 colorama.init()
 if not os.path.exists("logs"):
     os.mkdir("logs")
-Utils.logger.init_logger("FunPayBot", "logs/log.log")
+logging.config.dictConfig(CONFIG)
 logger = logging.getLogger("FunPayBot")
 logger.debug("Новый запуск.")
 
@@ -56,9 +50,9 @@ try:
     AUTO_DELIVERY_CONFIG = cfg_loader.load_auto_delivery_config(auto_delivery_config_path)
     logger.info("Обработал конфиг auto_delivery.cfg.")
 
-except (excs.ParamNotExists, excs.ParamValueEmpty, excs.ParamValueNotValid,
-        excs.NoSuchTableError, excs.NoSuchColumnError, excs.NoProductsError,
-        excs.NoProductVarError, excs.NoSuchProductFileError, excs.JSONParseError) as e:
+except (excs.SectionNotExists, excs.ParamNotExists, excs.ParamValueEmpty, excs.ParamValueNotValid,
+        excs.NoProductsError, excs.NoProductVarError,
+        excs.NoSuchProductFileError, excs.JSONParseError) as e:
     logger.error(e)
     logger.error("Завершаю программу...")
     exit()

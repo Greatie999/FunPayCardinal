@@ -5,6 +5,7 @@ from datetime import datetime
 
 import FunPayAPI.account
 import FunPayAPI.categories
+import FunPayAPI.runner
 
 
 def cache_categories(category_list: list[FunPayAPI.categories.Category]) -> None:
@@ -105,3 +106,46 @@ def get_month_name(month_number: int) -> str:
     if month_number > len(months):
         return months[0]
     return months[month_number-1]
+
+
+def get_product_from_json(path: str) -> list[str, int] | None:
+    with open(path, "r", encoding="utf-8") as f:
+        products = f.read()
+
+    products = json.loads(products)
+    if not len(products):
+        return None
+
+    product = str(products[0])
+    products.pop(0)
+    amount = len(products)
+    products = json.dumps(products, indent=4)
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(products)
+    return [product, amount]
+
+
+def format_msg_text(text: str, msg: FunPayAPI.runner.MessageEvent):
+    date_obj = datetime.now()
+    month_name = get_month_name(date_obj.month)
+    date = date_obj.strftime("%d.%m.%Y")
+    str_date = f"{date_obj.day} {month_name}"
+    str_full_date = str_date + f" {date_obj.year} года"
+
+    time_ = date_obj.strftime("%H:%M")
+    time_full = date_obj.strftime("%H:%M:%S")
+
+    variables = {
+        "$full_date_text": str_full_date,
+        "$date_text": str_date,
+        "$date": date,
+        "$time": time_,
+        "$full_time": time_full,
+        "$username": msg.sender_username,
+        "$message_text": msg.message_text
+    }
+
+    for var in variables:
+        text = text.replace(var, variables[var])
+    return text
