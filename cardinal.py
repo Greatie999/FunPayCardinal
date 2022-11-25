@@ -90,6 +90,9 @@ class Cardinal:
 
         :return: None
         """
+        if not self.main_config["FunPay"]["autoRaise"]:
+            return
+
         # Получаем категории аккаунта.
         while True:
             try:
@@ -129,12 +132,12 @@ class Cardinal:
                     break
                 except TimeoutError:
                     logger.warning(f"Не удалось получить ID игры, к которой относится категория \"{cat.title}\": "
-                                        f"превышен тайм-аут ожидания.")
+                                   f"превышен тайм-аут ожидания.")
                     logger.warning("Повторю попытку через 2 секунды...")
                     time.sleep(2)
                 except:
                     logger.error(f"Не удалось получить ID игры, к которой относится категория \"{cat.title}\": "
-                                      f"неизвестная ошибка.")
+                                 f"неизвестная ошибка.")
                     logger.debug(traceback.format_exc())
                     logger.warning("Повторю попытку через 2 секунды...")
                     time.sleep(2)
@@ -212,7 +215,7 @@ class Cardinal:
                 # todo: добавить обработку исключений.
             if not response["complete"]:
                 logger.warning(f"Не удалось поднять категорию \"{cat.title}\". "
-                               f"Попробую еще раз через {response['wait']} секунд(-ы/-у).")
+                               f"Попробую еще раз через {cardinal_tools.time_to_str(response['wait'])}.")
                 logger.debug(response["response"])
                 next_time = int(time.time()) + response["wait"]
                 self.game_ids[cat.game_id] = next_time
@@ -222,7 +225,7 @@ class Cardinal:
                 for category_name in response["raised_category_names"]:
                     logger.info(f"Поднял категорию \"{category_name}\". ")
                 logger.info(f"Все категории, относящиеся к игре с ID {cat.game_id} подняты!")
-                logger.info(f"Попробую еще раз через {response['wait']} секунд(-ы/-у).")
+                logger.info(f"Попробую еще раз через  {cardinal_tools.time_to_str(response['wait'])}.")
                 next_time = int(time.time()) + response['wait']
                 self.game_ids[cat.game_id] = next_time
                 if min_next_time == -1 or next_time < min_next_time:
@@ -297,7 +300,7 @@ class Cardinal:
         :param msg: сообщение.
         :return:
         """
-        if msg.message_text.strip() not in self.auto_response_config:
+        if msg.message_text.strip().lower() not in self.auto_response_config:
             return True
         logger.info(f"Получена команда \"{msg.message_text.strip()}\" "
                     f"в переписке с пользователем {Fore.YELLOW}{msg.sender_username} (node: {msg.node_id}).")
@@ -318,8 +321,6 @@ class Cardinal:
         else:
             logger.warning(f"Произошла ошибка при отправке сообщения пользователю {msg.sender_username}.")
             logger.debug(f"{response}")
-            logger.warning(f"Следующая попытка через 2 секунд.")
-            time.sleep(2)
             return False
 
     def send_response_wrapper(self, msg: FunPayAPI.runner.MessageEvent):
@@ -337,12 +338,14 @@ class Cardinal:
                 logger.warning(f"Произошла непредвиденная ошибка при отправке сообщения пользователю "
                                f"{msg.sender_username}.",)
                 logger.debug(traceback.format_exc())
-                logger.warning("Следующая попытка через 2 секунды.")
+                logger.info("Следующая попытка через секунду.")
                 attempts -= 1
-                time.sleep(2)
+                time.sleep(1)
                 continue
             if not result:
                 attempts -= 1
+                logger.info("Следующая попытка через секунду.")
+                time.sleep(1)
                 continue
             done = True
         if not done:
@@ -357,7 +360,7 @@ class Cardinal:
         :return:
         """
         logger.info(f"Новое сообщение в переписке с пользователем {Fore.YELLOW}{msg.sender_username}"
-                         f" (node: {msg.node_id}):")
+                    f" (node: {msg.node_id}):")
         for line in msg.message_text.split("\n"):
             logger.info(line)
 
@@ -379,7 +382,8 @@ class Cardinal:
             else:
                 text = cardinal_tools.format_msg_text(self.auto_response_config[msg.message_text]["notificationText"],
                                                       msg)
-            self.telegram.send_notification(text)
+
+            Thread(target=self.telegram.send_notification, args=(text, )).start()
 
     def notify_categories_raised(self, game_id: int, category_names: list[str], wait_time: int) -> None:
         """
@@ -393,8 +397,9 @@ class Cardinal:
             return
 
         cats_text = "".join(f"\"{i}\", " for i in category_names).strip()[:-1]
-        self.telegram.send_notification(f"Поднял категории: {cats_text}. (ID игры: {game_id}\n"
-                                        f"Попробую еще раз через {wait_time} секунд(-ы/-у).")
+        Thread(target=self.telegram.send_notification,
+               args=(f"Поднял категории: {cats_text}. (ID игры: {game_id}\n"
+                     f"Попробую еще раз через {cardinal_tools.time_to_str(wait_time)}.", )).start()
 
     # Функции запуска / остановки Кардинала.
     def init(self):

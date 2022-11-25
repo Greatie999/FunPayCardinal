@@ -73,7 +73,7 @@ def create_greetings(account: FunPayAPI.account):
     else:
         greetings = "Доброе утро"
 
-    currency = account.currency if f" {account.currency}" is not None else ""
+    currency = f" {account.currency}" if account.currency is not None else ""
 
     greetings_text = f"""{greetings}, {Fore.CYAN}{account.username}.
 Ваш ID: {Fore.YELLOW}{account.id}.
@@ -106,6 +106,30 @@ def get_month_name(month_number: int) -> str:
     if month_number > len(months):
         return months[0]
     return months[month_number-1]
+
+
+def time_to_str(time_: int):
+    """
+    Конвертирует число в строку формата "Nч Nмин Nсек"
+    :param time_: число для конвертации.
+    :return: строку-время.
+    """
+    m = time_ // 60
+    h = m // 60
+    time_ -= m * 60
+    m -= h * 60
+    s = time_
+
+    if not any([h, m, s]):
+        return "0 сек"
+    time_str = ""
+    if h:
+        time_str += f"{h}ч"
+    if m:
+        time_str += f" {m}мин"
+    if s:
+        time_str += f" {s}сек"
+    return time_str
 
 
 def get_product_from_json(path: str) -> list[str, int] | None:

@@ -118,12 +118,29 @@ def load_auto_response_config(config_path: str) -> configparser.ConfigParser:
     """
     config = configparser.ConfigParser()
     config.read_file(codecs.open(config_path, "r", "utf8"))
+    multi_commands = []
     for command in config.sections():
         check_param("response", command, "auto_response.cfg", config[command])
         check_param("telegramNotification", command, "auto_response.cfg", config[command],
                     valid_values=["0", "1"], raise_ex_if_not_exists=False)
         check_param("notificationText", command, "auto_response.cfg", config[command], raise_ex_if_not_exists=False)
 
+        # Если в названии команды есть "," - значит это несколько команд.
+        if "," in command:
+            multi_commands.append(command)
+
+    #
+    for commands in multi_commands:
+        copy_obj = config[commands]
+        cmds = commands.split(",")
+
+        for cmd in cmds:
+            config.add_section(cmd.strip())
+            for param in copy_obj:
+                config.set(cmd.strip(), param, copy_obj[param])
+        config.remove_section(commands)
+
+    print(config.sections())
     return config
 
 
