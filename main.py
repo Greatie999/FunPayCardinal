@@ -28,7 +28,7 @@ colorama.init()
 if not os.path.exists("logs"):
     os.mkdir("logs")
 logging.config.dictConfig(CONFIG)
-logger = logging.getLogger("FunPayBot")
+logger = logging.getLogger("main")
 logger.debug("Новый запуск.")
 
 # Загружаем конфиги

@@ -97,7 +97,7 @@ CONFIG = {
     },
 
     "loggers": {
-        "FunPayBot": {
+        "main": {
             "handlers": ["cli_handler", "file_handler"],
             "level": "DEBUG"
         },
