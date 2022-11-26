@@ -98,19 +98,19 @@ CONFIG = {
 
     "loggers": {
         "FunPayBot": {
-            "handlers": ["file_handler", "cli_handler"],
+            "handlers": ["cli_handler", "file_handler"],
             "level": "DEBUG"
         },
         "FunPayAPI": {
-            "handlers": ["file_handler", "cli_handler"],
+            "handlers": ["cli_handler", "file_handler"],
             "level": "DEBUG"
         },
         "Cardinal": {
-            "handlers": ["file_handler", "cli_handler"],
+            "handlers": ["cli_handler", "file_handler"],
             "level": "DEBUG"
         },
         "TGBot": {
-            "handlers": ["file_handler", "cli_handler"],
+            "handlers": ["cli_handler", "file_handler"],
             "level": "DEBUG"
         },
         "TeleBot": {
