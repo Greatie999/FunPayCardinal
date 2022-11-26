@@ -44,7 +44,7 @@ class TGBot:
 
     def init(self):
         self.__init_commands()
-        logger.info("Telegram бот инициализирован.")
+        logger.info("$MAGENTATelegram бот инициализирован.")
 
     def __init_commands(self):
         bot_instance = self.bot

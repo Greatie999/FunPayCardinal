@@ -124,8 +124,8 @@ class Cardinal:
                 user_lots_info = FunPayAPI.users.get_user_lots_info(self.account.id)
                 categories = user_lots_info["categories"]
                 lots = user_lots_info["lots"]
-                logger.info(f"$CYANПолучил информацию о лотах аккаунта. Всего категорий: $YELLOW{len(categories)}.")
-                logger.info(f"$CYANВсего лотов: $YELLOW{len(lots)}")
+                logger.info(f"$MAGENTAПолучил информацию о лотах аккаунта. Всего категорий: $YELLOW{len(categories)}.")
+                logger.info(f"$MAGENTAВсего лотов: $YELLOW{len(lots)}")
                 break
             except TimeoutError:
                 logger.warning("Не удалось загрузить данные о категориях аккаунта: превышен тайм-аут ожидания.")
@@ -192,7 +192,7 @@ class Cardinal:
         while True:
             try:
                 self.processed_orders = self.account.get_account_orders(include_completed=True)
-                logger.info(f"$CYANПолучил информацию об ордерах аккаунта.")
+                logger.info(f"$MAGENTAПолучил информацию об ордерах аккаунта.")
                 break
             except TimeoutError:
                 logger.warning("Не удалось получить информацию об ордерах аккаунта: превышен тайм-аут ожидания.")
@@ -210,6 +210,7 @@ class Cardinal:
         Загружает плагины и добавляет хэндлеры в self.message_event_handlers и self.new_order_event_handlers
         """
         self.runner = FunPayAPI.runner.Runner(self.account)
+        logger.info("$MAGENTARunner инициализирован.")
 
     def __init_telegram(self) -> None:
         """
@@ -238,6 +239,8 @@ class Cardinal:
                 continue
             for handler in functions:
                 var_names[name].append(handler)
+
+        logger.info("$MAGENTAХэндлеры инициализирован.")
 
     # Основные функции
 
@@ -376,12 +379,14 @@ class Cardinal:
         self.__init_account()
         self.__init_handlers()
 
-        if int(self.main_config["FunPay"]["autoRaise"]):
+        if any([
+            int(self.main_config["FunPay"]["autoRaise"]),
+            int(self.main_config["FunPay"]["autoRestore"])
+        ]):
             self.__init_user_lots_info()
 
         if any([
             int(self.main_config["FunPay"]["autoDelivery"]),
-            int(self.main_config["FunPay"]["autoRestore"])
         ]):
             self.__init_orders()
 

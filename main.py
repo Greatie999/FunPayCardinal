@@ -36,19 +36,19 @@ e = None
 try:
     main_config_path = get_abs_path("configs/_main.cfg")
     MAIN_CONFIG = cfg_loader.load_main_config(main_config_path)
-    logger.info("Обработал конфиг _main.cfg.")
+    logger.info("$MAGENTAОбработал конфиг _main.cfg.")
 
     lots_config_path = get_abs_path("configs/lots.cfg")
     LOTS_CONFIG = cfg_loader.load_lots_config(lots_config_path)
-    logger.info("Обработал конфиг lots.cfg.")
+    logger.info("$MAGENTAОбработал конфиг lots.cfg.")
 
     auto_response_config_path = get_abs_path("configs/auto_response.cfg")
     AUTO_RESPONSE_CONFIG = cfg_loader.load_auto_response_config(auto_response_config_path)
-    logger.info("Обработал конфиг auto_response.cfg.")
+    logger.info("$MAGENTAОбработал конфиг auto_response.cfg.")
 
     auto_delivery_config_path = get_abs_path("configs/auto_delivery.cfg")
     AUTO_DELIVERY_CONFIG = cfg_loader.load_auto_delivery_config(auto_delivery_config_path)
-    logger.info("Обработал конфиг auto_delivery.cfg.")
+    logger.info("$MAGENTAОбработал конфиг auto_delivery.cfg.")
 
 except (excs.SectionNotExists, excs.ParamNotExists, excs.ParamValueEmpty, excs.ParamValueNotValid,
         excs.NoProductsError, excs.NoProductVarError,
