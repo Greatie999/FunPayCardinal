@@ -18,6 +18,7 @@ from threading import Thread
 logger = logging.getLogger("Cardinal.handlers")
 
 
+# Хэндлеры для REGISTER_TO_NEW_MESSAGE_EVENT
 def log_msg_handler(msg: MessageEvent, *args):
     """
     Логирует полученное сообщение. Хэндлер.
@@ -116,8 +117,9 @@ def send_command_notification_handler(msg: MessageEvent, cardinal: Cardinal, *ar
         Thread(target=cardinal.telegram.send_notification, args=(text, )).start()
 
 
-def notify_categories_raised_handler(game_id: int, category_names: list[str], wait_time: int,
-                                     cardinal: Cardinal, *args) -> None:
+# Хэндлеры для REGISTER_TO_RAISE_EVENT
+def send_categories_raised_notification_handler(game_id: int, category_names: list[str], wait_time: int,
+                                                cardinal: Cardinal, *args) -> None:
     """
     Отправляет уведомление о поднятии лотов в Telegram.
 
@@ -132,10 +134,11 @@ def notify_categories_raised_handler(game_id: int, category_names: list[str], wa
 
     cats_text = "".join(f"\"{i}\", " for i in category_names).strip()[:-1]
     Thread(target=cardinal.telegram.send_notification,
-           args=(f"Поднял категории: {cats_text}. (ID игры: {game_id}\n"
+           args=(f"Поднял категории: {cats_text}. (ID игры: {game_id})\n"
                  f"Попробую еще раз через {cardinal_tools.time_to_str(wait_time)}.", )).start()
 
 
+# Хэндлеры для REGISTER_TO_NEW_ORDER_EVENT
 def send_product_text(node_id: int, text: str, order_id: str, cardinal: Cardinal, *args):
     """
     Отправляет сообщение с товаром в чат node_id.
@@ -199,53 +202,24 @@ def deliver_product(order: Order, cardinal: Cardinal, *args) -> list[bool | str]
     return [result, response_text]
 
 
-def process_orders_handler(event: OrderEvent, cardinal: Cardinal, *args):
-    """
-    Обновляет список ордеров и запускает хэндлеры, если есть новые заказы.
-    :param event: экземпляр эвента.
-    :param cardinal: экземпляр Кардинала.
-    :return:
-    """
-    if not int(cardinal.main_config["FunPay"]["AutoDelivery"]):
-        return
-
-    # Обновляем список ордеров.
-    attempts = 3
-    new_orders = {}
-    while attempts:
-        try:
-            new_orders = cardinal.account.get_account_orders(include_completed=True,
-                                                             exclude=list(cardinal.processed_orders.keys()))
-            logger.info("Обновил список ордеров.")
-            break
-        except:
-            logger.error("Не удалось обновить список ордеров.")
-            logger.debug(traceback.format_exc())
-            attempts -= 1
-            time.sleep(1)
-    if not attempts:
-        logger.error("Не удалось обновить список ордеров: превышено кол-во попыток.")
-        return
-
-    # Обрабатываем каждый ордер по отдельности.
-    for order_id in new_orders:
-        cardinal.processed_orders[order_id] = new_orders[order_id]
-        send_new_order_notification_handler(new_orders[order_id], cardinal)
-        try:
-            result = deliver_product(new_orders[order_id], cardinal)
-            if result is None:
-                logger.info(f"Лот \"{new_orders[order_id].title}\" не обнаружен в конфиге авто-выдачи.")
-            elif not result[0]:
-                logger.error(f"Ошибка при выдаче товара для ордера {order_id}: превышено кол-во попыток.")
-                send_delivery_notification_handler(new_orders[order_id], "Превышено кол-во попыток.", cardinal,
-                                                   errored=True)
-            else:
-                logger.info(f"Товар для ордера {order_id} выдан.")
-                send_delivery_notification_handler(new_orders[order_id], result[1], cardinal)
-        except Exception as e:
-            logger.error(f"Произошла непредвиденная ошибка при обработке заказа {order_id}.")
-            logger.debug(traceback.format_exc())
-            send_delivery_notification_handler(new_orders[order_id], str(e), cardinal, errored=True)
+def delivery_product_handler(order: Order, cardinal: Cardinal, *args):
+    try:
+        result = deliver_product(order, cardinal, *args)
+        if result is None:
+            logger.info(f"Лот \"{order.title}\" не обнаружен в конфиге авто-выдачи.")
+        elif not result[0]:
+            logger.error(f"Ошибка при выдаче товара для ордера {order.id}: превышено кол-во попыток.")
+            cardinal.run_handlers(cardinal.delivery_event_handlers,
+                                  [order, "Превышено кол-во попыток.", cardinal, True])
+        else:
+            logger.info(f"Товар для ордера {order.id} выдан.")
+            cardinal.run_handlers(cardinal.delivery_event_handlers,
+                                  [order, result[1], cardinal])
+    except Exception as e:
+        logger.error(f"Произошла непредвиденная ошибка при обработке заказа {order.id}.")
+        logger.debug(traceback.format_exc())
+        cardinal.run_handlers(cardinal.delivery_event_handlers,
+                              [order, str(e), cardinal, True])
 
 
 def send_new_order_notification_handler(order: Order, cardinal: Cardinal, *args):
@@ -262,6 +236,7 @@ ID ордера: {order.id}.
     Thread(target=cardinal.telegram.send_notification, args=(text, )).start()
 
 
+# Хэндлеры для REGISTER_TO_DELIVERY_EVENT
 def send_delivery_notification_handler(order: Order, delivery_text: str, cardinal: Cardinal,
                                        errored: bool = False, *args):
     if cardinal.telegram is None:
@@ -280,9 +255,11 @@ def send_delivery_notification_handler(order: Order, delivery_text: str, cardina
     Thread(target=cardinal.telegram.send_notification, args=(text, )).start()
 
 
+# Хэндлеры для REGISTER_TO_ORDERS_UPDATE_EVENT
 def updates_lots_state_handler(event: OrderEvent, cardinal: Cardinal, *args):
     if not int(cardinal.main_config["FunPay"]["autoRestore"]):
         return
+    logger.info("Обновляю информацию о лотах...")
     attempts = 3
     lots_info = []
     while attempts:
@@ -297,27 +274,36 @@ def updates_lots_state_handler(event: OrderEvent, cardinal: Cardinal, *args):
         logger.error("Не удалось получить информацию о лотах: превышено кол-во попыток.")
         return
 
-    lots_ids = [i.offer_id for i in lots_info]
+    lots_ids = [i.id for i in lots_info]
     for lot in cardinal.lots:
-        if lot.offer_id not in lots_ids:
+        if lot.id not in lots_ids:
             try:
-                cardinal.account.change_lot_state(lot.offer_id, lot.game_id)
-                logger.info(f"Активировал лот {lot.offer_id}.")
+                cardinal.account.change_lot_state(lot.id, lot.game_id)
+                logger.info(f"Активировал лот {lot.id}.")
             except:
-                logger.error(f"Не удалось активировать лот {lot.offer_id}.")
+                logger.error(f"Не удалось активировать лот {lot.id}.")
                 logger.debug(traceback.format_exc())
 
 
-REGISTER_TO_MESSAGE_EVENT = [log_msg_handler,
-                             send_response_handler,
-                             send_command_notification_handler
+REGISTER_TO_NEW_MESSAGE_EVENT = [
+    log_msg_handler,
+    send_response_handler,
+    send_command_notification_handler
 ]
 
 REGISTER_TO_RAISE_EVENT = [
-    notify_categories_raised_handler
+    send_categories_raised_notification_handler
 ]
 
-REGISTER_TO_ORDER_EVENT = [
-    process_orders_handler,
+REGISTER_TO_ORDERS_UPDATE_EVENT = [
     updates_lots_state_handler
+]
+
+REGISTER_TO_NEW_ORDER_EVENT = [
+    send_new_order_notification_handler,
+    delivery_product_handler
+]
+
+REGISTER_TO_DELIVERY_EVENT = [
+    send_delivery_notification_handler
 ]

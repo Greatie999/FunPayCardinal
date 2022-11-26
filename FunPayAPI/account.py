@@ -286,7 +286,7 @@ class Account:
             else:
                 return {"complete": False, "wait": 10, "raised_category_names": [], "response": response}
 
-    def get_lot_info(self, offer_id: int, game_id: int) -> list[dict[str, str]]:
+    def get_lot_info(self, lot_id: int, game_id: int) -> list[dict[str, str]]:
         headers = {
             "accept": "*/*",
             "content-type": "application/json",
@@ -296,11 +296,11 @@ class Account:
         tag = gen_rand_tag()
         payload = {
             "tag": tag,
-            "offer": offer_id,
+            "offer": lot_id,
             "node": game_id
         }
 
-        query = f"?tag={tag}&offer={offer_id}&node={game_id}"
+        query = f"?tag={tag}&offer={lot_id}&node={game_id}"
 
         response = requests.get(f"{Links.BASE_URL}/lots/offerEdit{query}", headers=headers, data=payload)
         json_response = response.json()
@@ -331,8 +331,8 @@ class Account:
 
         return result
 
-    def change_lot_state(self, offer_id: int, game_id: int, state: bool = True):
-        lot_info = self.get_lot_info(offer_id, game_id)
+    def change_lot_state(self, lot_id: int, game_id: int, state: bool = True):
+        lot_info = self.get_lot_info(lot_id, game_id)
 
         payload = {}
         for field in lot_info:

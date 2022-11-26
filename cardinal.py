@@ -54,11 +54,38 @@ class Cardinal:
         self.processed_orders: dict[str, FunPayAPI.orders.Order] | None = None
 
         # Хэндлеры
-        self.bot_init_handlers: list[Callable] = []
-        self.bot_start_handlers: list[Callable] = []
-        self.bot_stop_handlers: list[Callable] = []
+        # После инициализации Кардинала.
+        # Аргументы для хэндлеров: экземпляр Кардинала (self)
+        self.bot_init_handlers: list[Callable[[Cardinal, any], any]] = []
+
+        # После запуска Кардинала.
+        # Аргументы для хэндлеров: экземпляр Кардинала (self)
+        self.bot_start_handlers: list[Callable[[Cardinal, any], any]] = []
+
+        # После остановки Кардинала.
+        # Аргументы для хэндлеров: экземпляр Кардинала (self)
+        self.bot_stop_handlers: list[Callable[[Cardinal, any], any]] = []
+
+        # После обнаружения нового сообщения в чате.
+        # Аргументы для хэндлеров: экземпляр MessageEvent, экземпляр Кардинала (self)
         self.message_event_handlers: list[Callable[[FunPayAPI.runner.MessageEvent, Cardinal, any], any]] = []
-        self.orders_event_handlers: list[Callable[[FunPayAPI.runner.OrderEvent, Cardinal, any], any]] = []
+
+        # После уведомления от FunPay о том, что есть изменения в ордерах.
+        # Аргументы для хэндлеров: экземпляр OrderEvent, экземпляр Кардинала (self)
+        self.orders_updates_event_handlers: list[Callable[[FunPayAPI.runner.OrderEvent, Cardinal, any], any]] = []
+
+        # После обнаружения нового ордера.
+        # Аргументы для хэндлеров: экземпляр Order, экземпляр Кардинала (self)
+        self.new_order_event_handlers: list[Callable[[FunPayAPI.orders.Order, Cardinal, any], any]] = []
+
+        # После отправки продукта (независимо от результата).
+        # Аргументы для хэндлеров: экземпляр Order, текст товара / ошибки: str, экземпляр Кардинала (self),
+        # результат доставки (True/False)
+        self.delivery_event_handlers: list[Callable] = []
+
+        # После поднятия лотов (успешного поднятия).
+        # Аргументы для хэндлеров: game_id категории: int, список названий категорий: list[str],
+        # экземпляр Кардинала (self)
         self.raise_lots_handlers: list[Callable] = []
 
     # Инициирование
@@ -180,7 +207,7 @@ class Cardinal:
     def __init_runner(self) -> None:
         """
         Инициализирует класс раннер'а (self.runner),
-        Загружает плагины и добавляет хэндлеры в self.message_event_handlers и self.orders_event_handlers
+        Загружает плагины и добавляет хэндлеры в self.message_event_handlers и self.new_order_event_handlers
         """
         self.runner = FunPayAPI.runner.Runner(self.account)
 
@@ -197,9 +224,11 @@ class Cardinal:
             "REGISTER_TO_INIT_EVENT": self.bot_init_handlers,
             "REGISTER_TO_START_EVENT": self.bot_start_handlers,
             "REGISTER_TO_STOP_EVENT": self.bot_stop_handlers,
-            "REGISTER_TO_MESSAGE_EVENT": self.message_event_handlers,
+            "REGISTER_TO_NEW_MESSAGE_EVENT": self.message_event_handlers,
             "REGISTER_TO_RAISE_EVENT": self.raise_lots_handlers,
-            "REGISTER_TO_ORDER_EVENT": self.orders_event_handlers,
+            "REGISTER_TO_ORDERS_UPDATE_EVENT": self.orders_updates_event_handlers,
+            "REGISTER_TO_NEW_ORDER_EVENT": self.new_order_event_handlers,
+            "REGISTER_TO_DELIVERY_EVENT": self.delivery_event_handlers
         }
 
         for name in var_names:
@@ -314,7 +343,36 @@ class Cardinal:
                     self.run_handlers(self.message_event_handlers, [event, self, ])
 
                 elif event.type == FunPayAPI.enums.EventTypes.NEW_ORDER:
-                    self.run_handlers(self.orders_event_handlers, [event, self, ])
+                    self.process_orders(event)
+
+    def process_orders(self, event: FunPayAPI.runner.OrderEvent):
+        """
+        Обновляет список ордеров и запускает хэндлеры, если есть новые заказы.
+        :return:
+        """
+        # Обновляем список ордеров.
+        self.run_handlers(self.orders_updates_event_handlers, [event, self, ])
+        attempts = 3
+        new_orders = {}
+        while attempts:
+            try:
+                new_orders = self.account.get_account_orders(include_completed=True,
+                                                             exclude=list(self.processed_orders.keys()))
+                logger.info("Обновил список ордеров.")
+                break
+            except:
+                logger.error("Не удалось обновить список ордеров.")
+                logger.debug(traceback.format_exc())
+                attempts -= 1
+                time.sleep(1)
+        if not attempts:
+            logger.error("Не удалось обновить список ордеров: превышено кол-во попыток.")
+            return
+
+        # Обрабатываем каждый ордер по отдельности.
+        for order_id in new_orders:
+            self.processed_orders[order_id] = new_orders[order_id]
+            self.run_handlers(self.new_order_event_handlers, [new_orders[order_id], self, ])
 
     # Функции запуска / остановки Кардинала.
     def init(self):
