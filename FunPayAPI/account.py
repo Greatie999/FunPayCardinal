@@ -287,6 +287,12 @@ class Account:
                 return {"complete": False, "wait": 10, "raised_category_names": [], "response": response}
 
     def get_lot_info(self, lot_id: int, game_id: int) -> list[dict[str, str]]:
+        """
+        Получает значения всех полей лота.
+        :param lot_id: ID лота.
+        :param game_id: ID игры, к которой относится лот.
+        :return: список из объектов {"название поля": "значение поля"}
+        """
         headers = {
             "accept": "*/*",
             "content-type": "application/json",
@@ -331,7 +337,14 @@ class Account:
 
         return result
 
-    def change_lot_state(self, lot_id: int, game_id: int, state: bool = True):
+    def change_lot_state(self, lot_id: int, game_id: int, state: bool = True) -> dict:
+        """
+        Изменяет состояние лота (активное / неактивное)
+        :param lot_id: ID лота.
+        :param game_id: ID игры, к которой относится лот.
+        :param state: Целевое состояние лота.
+        :return: ответ FunPay.
+        """
         lot_info = self.get_lot_info(lot_id, game_id)
 
         payload = {}
@@ -352,6 +365,7 @@ class Account:
             "cookie": f"golden_key={self.golden_key}; PHPSESSID={self.session_id}"
         }
         response = requests.post(f"{Links.BASE_URL}/lots/offerSave", headers=headers, data=payload)
+        return response.json()
 
 
 def get_account(token: str, timeout: float = 10.0) -> Account:

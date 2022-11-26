@@ -50,7 +50,11 @@ class Runner:
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(logging.NullHandler())
 
-    def get_updates(self) -> list[MessageEvent, OrderEvent]:
+    def get_updates(self) -> list[MessageEvent | OrderEvent]:
+        """
+        Получает список обновлений от FunPay.
+        :return: список эвентов.
+        """
         orders = {
             "type": "orders_counters",
             "id": self.account.id,

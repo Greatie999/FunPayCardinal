@@ -1,3 +1,8 @@
+"""
+В данном модуле написаны хэндлеры для разных эвентов.
+"""
+
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -34,7 +39,7 @@ def log_msg_handler(msg: MessageEvent, *args):
 
 def send_response(msg: MessageEvent, cardinal: Cardinal, *args) -> bool:
     """
-    Проверяет, является ли сообщение командой, если да - пытается отправить сообщение в ответ.
+    Отправляет ответ на команду.
 
     :param msg: сообщение.
     :param cardinal: экземпляр Кардинала.
@@ -57,7 +62,7 @@ def send_response(msg: MessageEvent, cardinal: Cardinal, *args) -> bool:
 
 def send_response_handler(msg: MessageEvent, cardinal: Cardinal, *args):
     """
-    Обертка, обрабатывающая ошибки cardinal.send_response(). Хэндлер.
+    Проверяет, является ли сообщение командой, и если да, пытается выполнить send_response()
 
     :param msg: сообщение.
     :param cardinal: экземпляр Кардинала.
@@ -142,6 +147,7 @@ def send_categories_raised_notification_handler(game_id: int, category_names: li
 def send_product_text(node_id: int, text: str, order_id: str, cardinal: Cardinal, *args):
     """
     Отправляет сообщение с товаром в чат node_id.
+
     :param node_id: ID чата.
     :param text: текст сообщения.
     :param order_id: ID ордера.
@@ -162,14 +168,14 @@ def send_product_text(node_id: int, text: str, order_id: str, cardinal: Cardinal
     return False
 
 
-def deliver_product(order: Order, cardinal: Cardinal, *args) -> list[bool | str] | None:
+def deliver_product(order: Order, cardinal: Cardinal, *args) -> tuple[bool, str, int] | None:
     """
     Форматирует текст товара и отправляет его покупателю.
 
     :param order: объект заказа.
     :param cardinal: экземпляр Кардинала.
     :return: результат выполнения. None - если лота нет в конфиге.
-    [Результат выполнения, текст товара] - в любом другом случае.
+    [Результат выполнения, текст товара, оставшееся кол-во товара] - в любом другом случае.
     """
     # Ищем название лота в конфиге.
     delivery_obj = None
@@ -186,7 +192,7 @@ def deliver_product(order: Order, cardinal: Cardinal, *args) -> list[bool | str]
     # Проверяем, есть ли у лота файл с товарами. Если нет, то просто отправляем response лота.
     if delivery_obj.get("productsFilePath") is None:
         result = send_product_text(node_id, response_text, order.title, cardinal)
-        return [result, response_text]
+        return result, response_text, -1
 
     # Получаем товар.
     product = cardinal_tools.get_product_from_json(delivery_obj.get("productsFilePath"))
@@ -199,10 +205,17 @@ def deliver_product(order: Order, cardinal: Cardinal, *args) -> list[bool | str]
     # Если произошла какая-либо ошибка при отправлении товара, возвращаем товар обратно в файл с товарами.
     if not result:
         cardinal_tools.add_product_to_json(delivery_obj.get("productsFilePath"), product_text)
-    return [result, response_text]
+    return result, response_text, -1
 
 
 def delivery_product_handler(order: Order, cardinal: Cardinal, *args):
+    """
+    Обертка для deliver_product(), обрабатывающая ошибки.
+
+    :param order: экземпляр заказа.
+    :param cardinal: экземпляр кардинала.
+    :return:
+    """
     try:
         result = deliver_product(order, cardinal, *args)
         if result is None:
@@ -223,6 +236,13 @@ def delivery_product_handler(order: Order, cardinal: Cardinal, *args):
 
 
 def send_new_order_notification_handler(order: Order, cardinal: Cardinal, *args):
+    """
+    Отправляет уведомления о новом заказе в телеграм.
+
+    :param order: экземпляр заказа.
+    :param cardinal: экземпляр кардинала.
+    :return:
+    """
     if cardinal.telegram is None:
         return
     if not int(cardinal.main_config["Telegram"]["newOrderNotification"]):
@@ -239,6 +259,15 @@ ID ордера: {order.id}.
 # Хэндлеры для REGISTER_TO_DELIVERY_EVENT
 def send_delivery_notification_handler(order: Order, delivery_text: str, cardinal: Cardinal,
                                        errored: bool = False, *args):
+    """
+    Отправляет уведомление в телеграм об отправке товара.
+
+    :param order: экземпляр ордера.
+    :param delivery_text: текст отправленного товара.
+    :param cardinal: экземпляр кардинала.
+    :param errored: результат отправки товара.
+    :return:
+    """
     if cardinal.telegram is None:
         return
     if not int(cardinal.main_config["Telegram"]["productsDeliveryNotification"]):
@@ -257,6 +286,13 @@ def send_delivery_notification_handler(order: Order, delivery_text: str, cardina
 
 # Хэндлеры для REGISTER_TO_ORDERS_UPDATE_EVENT
 def updates_lots_state_handler(event: OrderEvent, cardinal: Cardinal, *args):
+    """
+    Активирует деактивированные лоты.
+
+    :param event: не используется.
+    :param cardinal: экземпляр кардинала.
+    :return:
+    """
     if not int(cardinal.main_config["FunPay"]["autoRestore"]):
         return
     logger.info("Обновляю информацию о лотах...")

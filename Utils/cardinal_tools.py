@@ -14,6 +14,7 @@ def cache_categories(category_list: list[FunPayAPI.categories.Category]) -> None
     """
     Кэширует данные о категориях аккаунта в файл storage/cache/categories.json. Необходимо для того, чтобы каждый раз
     при запуске бота не отправлять запросы на получение game_id каждой категории.
+
     :param category_list: список категорий, которые необходимо кэшировать.
     :return: None
     """
@@ -43,6 +44,7 @@ def load_cached_categories() -> dict:
     """
     Загружает данные о категориях аккаунта из файла storage/cache/categories.json. Необходимо для того, чтобы каждый раз
     при запуске бота не отправлять запросы на получение game_id каждой категории.
+
     :return: словарь загруженных категорий.
     """
     if not os.path.exists("storage/cache/categories.json"):
@@ -61,6 +63,7 @@ def load_cached_categories() -> dict:
 def create_greetings(account: FunPayAPI.account):
     """
     Генерирует приветствие для вывода в консоль после загрузки данных о пользователе.
+
     :return:
     """
     current_time = datetime.now()
@@ -88,6 +91,7 @@ $MAGENTAУдачной торговли!"""
 def get_month_name(month_number: int) -> str:
     """
     Возвращает название месяца в родительном падеже.
+
     :param month_number: номер месяца.
     :return: название месяца в родительном падеже.
     """
@@ -113,6 +117,7 @@ def get_month_name(month_number: int) -> str:
 def time_to_str(time_: int):
     """
     Конвертирует число в строку формата "Nч Nмин Nсек"
+
     :param time_: число для конвертации.
     :return: строку-время.
     """
@@ -135,6 +140,12 @@ def time_to_str(time_: int):
 
 
 def get_product_from_json(path: str) -> list[str, int] | None:
+    """
+    Берет 1 единицу товара из файла.
+
+    :param path: путь до файла с товарами.
+    :return: [Товар, оставшееся кол-во товара]
+    """
     with open(path, "r", encoding="utf-8") as f:
         products = f.read()
 
@@ -153,6 +164,13 @@ def get_product_from_json(path: str) -> list[str, int] | None:
 
 
 def add_product_to_json(path: str, product: str) -> None:
+    """
+    Добавляет 1 единицу товара в файл.
+
+    :param path: путь до файла с товарами.
+    :param product: товар.
+    :return:
+    """
     with open(path, "r", encoding="utf-8") as f:
         products = f.read()
 
@@ -163,7 +181,14 @@ def add_product_to_json(path: str, product: str) -> None:
         f.write(json.dumps(products, indent=4, ensure_ascii=False))
 
 
-def format_msg_text(text: str, msg: FunPayAPI.runner.MessageEvent):
+def format_msg_text(text: str, msg: FunPayAPI.runner.MessageEvent) -> str:
+    """
+    Форматирует текст, подставляя значения переменных, доступных для MessageEvent.
+
+    :param text: текст для форматирования.
+    :param msg: экземпляр MessageEvent.
+    :return: форматированый текст.
+    """
     date_obj = datetime.now()
     month_name = get_month_name(date_obj.month)
     date = date_obj.strftime("%d.%m.%Y")
@@ -189,6 +214,13 @@ def format_msg_text(text: str, msg: FunPayAPI.runner.MessageEvent):
 
 
 def format_order_text(text: str, order: FunPayAPI.orders.Order) -> str:
+    """
+    Форматирует текст, подставляя значения переменных, доступных для Order.
+
+    :param text: текст для форматирования.
+    :param order: экземпляр Order.
+    :return: форматированый текст.
+    """
     date_obj = datetime.now()
     month_name = get_month_name(date_obj.month)
     date = date_obj.strftime("%d.%m.%Y")
