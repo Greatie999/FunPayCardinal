@@ -416,7 +416,8 @@ class Cardinal:
 
         if self.telegram:
             Thread(target=self.telegram.run).start()
-            self.telegram.send_notification("Бот запущен!")
+
+        self.run_handlers(self.bot_start_handlers, [self, ])
 
     def stop(self):
         """

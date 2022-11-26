@@ -323,6 +323,27 @@ def updates_lots_state_handler(event: OrderEvent, cardinal: Cardinal, *args):
                 logger.debug(traceback.format_exc())
 
 
+# Хэндлеры для REGISTER_TO_START_EVENT
+def send_bot_started_notification_handler(cardinal: Cardinal, *args):
+    """
+    Отправляет уведомление о запуске бота в телеграм.
+
+    :param cardinal: экземпляр кардинала.
+    """
+    if cardinal.telegram is None:
+        return
+
+    if cardinal.account.currency is None:
+        curr = ""
+    else:
+        curr = cardinal.account.currency
+    text = f"""Бот запущен!
+Аккаунт: {cardinal.account.username} | {cardinal.account.id}
+Баланс: {cardinal.account.balance}{curr}
+Незавершенных ордеров: {cardinal.account.active_sales}"""
+    cardinal.telegram.send_notification(text)
+
+
 REGISTER_TO_NEW_MESSAGE_EVENT = [
     log_msg_handler,
     send_response_handler,
@@ -345,3 +366,5 @@ REGISTER_TO_NEW_ORDER_EVENT = [
 REGISTER_TO_DELIVERY_EVENT = [
     send_delivery_notification_handler
 ]
+
+REGISTER_TO_START_EVENT = [send_bot_started_notification_handler]
