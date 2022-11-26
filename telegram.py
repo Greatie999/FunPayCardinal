@@ -102,7 +102,6 @@ class TGBot:
                     self.user_reply_statuses[chat_id][user_id] = \
                         f"reply_to_node_id:{call.data.split(':')[1]}"
                     self.bot.answer_callback_query(call.id)
-                    print(self.user_reply_statuses)
 
                 elif data == "cancel_node_reply":
                     if chat_id in self.user_reply_statuses and user_id in self.user_reply_statuses[chat_id] and \
@@ -122,7 +121,6 @@ class TGBot:
             try:
                 chat_id = message.chat.id
                 user_id = message.from_user.id
-                print(chat_id, user_id, self.user_reply_statuses)
                 if chat_id in self.user_reply_statuses and user_id in self.user_reply_statuses[chat_id] and \
                         self.user_reply_statuses[chat_id][user_id].startswith("reply_to_node_id:"):
                     if not self.cardinal:
