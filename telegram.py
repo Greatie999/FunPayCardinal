@@ -126,7 +126,7 @@ class TGBot:
 
     def run(self):
         try:
-            logger.info(f"Telegram бот @{self.bot.user.username} запущен.")
+            logger.info(f"$CYANTelegram бот $YELLOW@{self.bot.user.username} $CYANзапущен.")
             self.bot.infinity_polling(logger_level=logging.DEBUG)
         except:
             logger.error("Произошла ошибка при получении обновлений Telegram (введен некорректный токен?).")

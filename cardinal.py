@@ -318,6 +318,20 @@ class Cardinal:
         Запускает бесконечный цикл получения эвентов от FunPay.
         """
         logger.info("$CYANRunner запущен.")
+        if int(self.main_config["FunPay"]["infiniteOnline"]):
+            logger.info("$CYANВечный онлайн запущен.")
+
+        if int(self.main_config["FunPay"]["autoResponse"]):
+            logger.info(f"$CYANАвто-ответ запущен. "
+                        f"Загружено $YELLOW{len(self.auto_response_config.sections())} $CYANкоманд.")
+
+        if int(self.main_config["FunPay"]["autoDelivery"]):
+            logger.info(f"$CYANАвто-выдача товара запущена. "
+                        f"Загружено $YELLOW{len(self.auto_delivery_config.sections())} $CYANлотов для выдачи.")
+
+        if int(self.main_config["FunPay"]["autoRestore"]):
+            logger.info(f"$CYANАвто-восстановление лота запущено. "
+                        f"Загружено $YELLOW{len(self.lots)} $CYANлотов.")
         while self.running:
             try:
                 events = self.runner.get_updates()

@@ -66,11 +66,17 @@ except Exception as e:
 
 # Запускаем основную программу Cardinal
 if __name__ == '__main__':
-    main_program = Cardinal(
-        MAIN_CONFIG,
-        LOTS_CONFIG,
-        AUTO_RESPONSE_CONFIG,
-        AUTO_DELIVERY_CONFIG
-    )
-    main_program.init()
-    main_program.run()
+    try:
+        main_program = Cardinal(
+            MAIN_CONFIG,
+            LOTS_CONFIG,
+            AUTO_RESPONSE_CONFIG,
+            AUTO_DELIVERY_CONFIG
+        )
+        main_program.init()
+        main_program.run()
+    except:
+        logger.critical("Произошла наикритическая ошибка, которая добила меня окончательно...")
+        logger.critical("Срочно отправь лог файл разработчику!")
+        logger.debug(traceback.format_exc())
+        exit()
