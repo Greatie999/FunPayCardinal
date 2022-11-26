@@ -1,3 +1,4 @@
+import os.path
 import time
 import configparser
 import traceback
@@ -87,6 +88,17 @@ class Cardinal:
         # Аргументы для хэндлеров: game_id категории: int, список названий категорий: list[str],
         # экземпляр Кардинала (self)
         self.raise_lots_handlers: list[Callable] = []
+
+        self.register_var_names = {
+            "REGISTER_TO_INIT_EVENT": self.bot_init_handlers,
+            "REGISTER_TO_START_EVENT": self.bot_start_handlers,
+            "REGISTER_TO_STOP_EVENT": self.bot_stop_handlers,
+            "REGISTER_TO_NEW_MESSAGE_EVENT": self.message_event_handlers,
+            "REGISTER_TO_RAISE_EVENT": self.raise_lots_handlers,
+            "REGISTER_TO_ORDERS_UPDATE_EVENT": self.orders_updates_event_handlers,
+            "REGISTER_TO_NEW_ORDER_EVENT": self.new_order_event_handlers,
+            "REGISTER_TO_DELIVERY_EVENT": self.delivery_event_handlers
+        }
 
     # Инициирование
     def __init_account(self) -> None:
@@ -220,27 +232,44 @@ class Cardinal:
         self.telegram = telegram.TGBot(self.main_config)
         self.telegram.init()
 
-    def __init_handlers(self) -> None:
-        var_names = {
-            "REGISTER_TO_INIT_EVENT": self.bot_init_handlers,
-            "REGISTER_TO_START_EVENT": self.bot_start_handlers,
-            "REGISTER_TO_STOP_EVENT": self.bot_stop_handlers,
-            "REGISTER_TO_NEW_MESSAGE_EVENT": self.message_event_handlers,
-            "REGISTER_TO_RAISE_EVENT": self.raise_lots_handlers,
-            "REGISTER_TO_ORDERS_UPDATE_EVENT": self.orders_updates_event_handlers,
-            "REGISTER_TO_NEW_ORDER_EVENT": self.new_order_event_handlers,
-            "REGISTER_TO_DELIVERY_EVENT": self.delivery_event_handlers
-        }
+    def __add_handlers(self, obj) -> None:
+        """
+        Добавляет хэндлеры из переданного объекта.
 
-        for name in var_names:
+        :param obj: модуль (плагин)
+        """
+        for name in self.register_var_names:
             try:
-                functions = getattr(handlers, name)
+                functions = getattr(obj, name)
             except AttributeError:
                 continue
             for handler in functions:
-                var_names[name].append(handler)
+                self.register_var_names[name].append(handler)
 
-        logger.info("$MAGENTAХэндлеры инициализирован.")
+        logger.info(f"Хэндлеры из $YELLOW{obj.__name__}.py$color зарегистрированы.")
+
+    def __load_plugins(self) -> None:
+        """
+        Загружает плагины из папки plugins.
+        """
+        if not os.path.exists("plugins"):
+            logger.warning("Папка с плагинами не обнаружена.")
+            return
+        plugins = [file for file in os.listdir("plugins") if file.endswith(".py")]
+        if not len(plugins):
+            logger.info("Плагины не обнаружены.")
+            return
+
+        for file in plugins:
+            try:
+                plugin = __import__("plugins", globals(), locals(), [f"{file[:-3]}"])
+                plugin = getattr(plugin, file[:-3])
+                logger.info(f"Плагин $YELLOW{file}$color загружен.")
+            except:
+                logger.error(f"Не удалось загрузить плагин {file}. Подробнее в файле логов.")
+                logger.debug(traceback.format_exc())
+                continue
+            self.__add_handlers(plugin)
 
     # Основные функции
 
@@ -292,10 +321,44 @@ class Cardinal:
                                                              response["wait"], self, ])
         return min_next_time
 
+    def send_message(self, msg: FunPayAPI.runner.MessageEvent):
+        """
+        Отправляет сообщение в чат c ID node_id. Если сообщение доставлено - добавляет его в список последних сообщений
+        в runner.
+
+        :param msg: объект MessageEvent.
+        :return:
+        """
+        if self.main_config["Other"]["botName"]:
+            msg.message_text = f"{self.main_config['Other']['botName']}\n" + msg.message_text
+
+        response = self.account.send_message(msg.node_id, msg.message_text)
+        if response.get("response") and response.get("response").get("error") is None:
+            if len(msg.message_text) > 250:
+                obj_text = msg.message_text[:250]
+            else:
+                obj_text = msg.message_text
+
+            if self.runner is not None:
+                new_msg_obj = FunPayAPI.runner.MessageEvent(msg.node_id,
+                                                            obj_text,
+                                                            msg.sender_username,
+                                                            msg.send_time,
+                                                            msg.tag)
+
+                self.runner.last_messages[msg.node_id] = new_msg_obj
+            logger.info(f"Отправил сообщение пользователю {msg.sender_username}.")
+            return True
+        else:
+            logger.warning(f"Произошла ошибка при отправке сообщения пользователю {msg.sender_username}.")
+            logger.debug(f"{response}")
+            return False
+
     # Бесконечные циклы.
     def lots_raise_loop(self):
         """
         Запускает бесконечный цикл поднятия категорий (если autoRaise в _main.cfg == 1)
+
         :return:
         """
         logger.info("$CYANАвто-поднятие лотов запущено.")
@@ -345,6 +408,7 @@ class Cardinal:
     def process_funpay_events(self):
         """
         "Слушает" self.listen_runner(), запускает хэндлеры, привязанные к эвенту.
+
         :return:
         """
         for events in self.listen_runner():
@@ -358,6 +422,7 @@ class Cardinal:
     def process_orders(self, event: FunPayAPI.runner.OrderEvent):
         """
         Обновляет список ордеров и запускает хэндлеры, если есть новые заказы.
+
         :return:
         """
         # Обновляем список ордеров.
@@ -388,10 +453,12 @@ class Cardinal:
     def init(self):
         """
         Инициализирует все необходимые для работы Кардинала классы.
+
         :return:
         """
         self.__init_account()
-        self.__init_handlers()
+        self.__add_handlers(handlers)
+        self.__load_plugins()
 
         if any([
             int(self.main_config["FunPay"]["autoRaise"]),
@@ -401,6 +468,7 @@ class Cardinal:
 
         if any([
             int(self.main_config["FunPay"]["autoDelivery"]),
+            int(self.main_config["FunPay"]["autoRestore"])
         ]):
             self.__init_orders()
 
@@ -418,6 +486,7 @@ class Cardinal:
     def run(self):
         """
         Запускает все потоки.
+
         :return:
         """
         self.running = True
@@ -436,6 +505,7 @@ class Cardinal:
     def stop(self):
         """
         Останавливает все потоки.
+
         :return:
         """
         self.running = False
@@ -444,6 +514,7 @@ class Cardinal:
     def run_handlers(self, handlers: list[Callable], args) -> None:
         """
         Выполняет функции из списка handlers.
+
         :param handlers: Список функций.
         :param args: аргументы для функций.
         :return:

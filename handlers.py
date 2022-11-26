@@ -37,6 +37,31 @@ def log_msg_handler(msg: MessageEvent, *args):
         logger.info(line)
 
 
+def send_new_message_notification(msg: MessageEvent, cardinal: Cardinal, *args):
+    """
+    Отправляет уведомление о новом сообщении в телеграм.
+
+    :param msg: экземпляр сообщения.
+    :param cardinal: экземпляр Кардинала.
+    """
+    if cardinal.telegram is None or not int(cardinal.main_config["Telegram"]["newMessageNotification"]):
+        return
+    if msg.message_text.strip() in cardinal.auto_response_config.sections():
+        return
+
+    if "Покупатель" in msg.message_text or "Продавец" in msg.message_text:
+        if "вернул деньги" in msg.message_text or "оплатил заказ" in msg.message_text or \
+                "оставил отзыв" in msg.message_text:
+            return
+    text = f"""Новое сообщение в переписке с пользователем $userlink.
+
+{msg.message_text}"""
+    replaces = [
+        ["$userlink", f"[{msg.sender_username}](https://funpay.com/chat?node={msg.node_id})"]
+    ]
+    Thread(target=cardinal.telegram.send_notification, args=(text, replaces)).start()
+
+
 def send_response(msg: MessageEvent, cardinal: Cardinal, *args) -> bool:
     """
     Отправляет ответ на команду.
@@ -47,17 +72,11 @@ def send_response(msg: MessageEvent, cardinal: Cardinal, *args) -> bool:
     """
     response_text = cardinal_tools.format_msg_text(cardinal.auto_response_config[msg.message_text.strip()]["response"],
                                                    msg)
+
     new_msg_object = MessageEvent(msg.node_id, response_text, msg.sender_username, msg.send_time, msg.tag)
 
-    response = cardinal.account.send_message(msg.node_id, response_text)
-    if response.get("response") and response.get("response").get("error") is None:
-        cardinal.runner.last_messages[msg.node_id] = new_msg_object
-        logger.info(f"Отправил ответ пользователю {msg.sender_username}.")
-        return True
-    else:
-        logger.warning(f"Произошла ошибка при отправке сообщения пользователю {msg.sender_username}.")
-        logger.debug(f"{response}")
-        return False
+    response = cardinal.send_message(new_msg_object)
+    return response
 
 
 def send_response_handler(msg: MessageEvent, cardinal: Cardinal, *args):
@@ -81,7 +100,7 @@ def send_response_handler(msg: MessageEvent, cardinal: Cardinal, *args):
         try:
             result = send_response(msg, cardinal, *args)
         except:
-            logger.error(f"Произошла непредвиденная ошибка при отправке сообщения пользователю {msg.sender_username}.",)
+            logger.error(f"Произошла непредвиденная ошибка при отправке ответа пользователю {msg.sender_username}.",)
             logger.debug(traceback.format_exc())
             logger.info("Следующая попытка через секунду.")
             attempts -= 1
@@ -144,28 +163,38 @@ def send_categories_raised_notification_handler(game_id: int, category_names: li
 
 
 # Хэндлеры для REGISTER_TO_NEW_ORDER_EVENT
-def send_product_text(node_id: int, text: str, order_id: str, cardinal: Cardinal, *args):
+def send_product_text(node_id: int, buyer_username: str, text: str, order_id: str, cardinal: Cardinal, *args):
     """
     Отправляет сообщение с товаром в чат node_id.
 
     :param node_id: ID чата.
+    :param buyer_username: никнейм покупателя.
     :param text: текст сообщения.
     :param order_id: ID ордера.
     :param cardinal: экземпляр Кардинала.
     :return: результат отправки.
     """
+    new_msg_obj = MessageEvent(node_id, text, buyer_username, None, None)
     attempts = 3
     while attempts:
         try:
-            cardinal.account.send_message(node_id, text)
-            return True
+            result = cardinal.send_message(new_msg_obj)
         except:
-            logger.error(f"Произошла ошибка при отправке товара для ордера {order_id}.")
+            logger.error(f"Произошла непредвиденная ошибка при отправке товара для ордера {order_id}.")
             logger.debug(traceback.format_exc())
             logger.info("Следующая попытка через секунду.")
             attempts -= 1
             time.sleep(1)
-    return False
+            continue
+        if not result:
+            attempts -= 1
+            logger.info("Следующая попытка через секунду.")
+            time.sleep(1)
+            continue
+        break
+    if not attempts:
+        return False
+    return True
 
 
 def deliver_product(order: Order, cardinal: Cardinal, *args) -> tuple[bool, str, int] | None:
@@ -191,7 +220,7 @@ def deliver_product(order: Order, cardinal: Cardinal, *args) -> tuple[bool, str,
 
     # Проверяем, есть ли у лота файл с товарами. Если нет, то просто отправляем response лота.
     if delivery_obj.get("productsFilePath") is None:
-        result = send_product_text(node_id, response_text, order.title, cardinal)
+        result = send_product_text(node_id, order.buyer_name, response_text, order.id, cardinal)
         return result, response_text, -1
 
     # Получаем товар.
@@ -200,7 +229,7 @@ def deliver_product(order: Order, cardinal: Cardinal, *args) -> tuple[bool, str,
     response_text = response_text.replace("$product", product_text)
 
     # Отправляем товар.
-    result = send_product_text(node_id, response_text, order.id, cardinal)
+    result = send_product_text(node_id, order.buyer_name, response_text, order.id, cardinal)
 
     # Если произошла какая-либо ошибка при отправлении товара, возвращаем товар обратно в файл с товарами.
     if not result:
@@ -208,7 +237,7 @@ def deliver_product(order: Order, cardinal: Cardinal, *args) -> tuple[bool, str,
     return result, response_text, -1
 
 
-def delivery_product_handler(order: Order, cardinal: Cardinal, *args):
+def deliver_product_handler(order: Order, cardinal: Cardinal, *args):
     """
     Обертка для deliver_product(), обрабатывающая ошибки.
 
@@ -229,7 +258,7 @@ def delivery_product_handler(order: Order, cardinal: Cardinal, *args):
         else:
             logger.info(f"Товар для ордера {order.id} выдан.")
             cardinal.run_handlers(cardinal.delivery_event_handlers,
-                                  [order, result[1], cardinal])
+                                  [order, result[1], cardinal, False])
     except Exception as e:
         logger.error(f"Произошла непредвиденная ошибка при обработке заказа {order.id}.")
         logger.debug(traceback.format_exc())
@@ -252,10 +281,14 @@ def send_new_order_notification_handler(order: Order, cardinal: Cardinal, *args)
 
     text = f"""Новый ордер!
 Покупатель: {order.buyer_name}.
-ID ордера: {order.id}.
+ID ордера: $orderlink.
 Сумма: {order.price}.
 Лот: \"{order.title}\"."""
-    Thread(target=cardinal.telegram.send_notification, args=(text, )).start()
+
+    replaces = [
+        ["$orderlink", f"[\\{order.id} \\(клик\\)](https://funpay.com/orders/{order.id[1:]}/)"]
+    ]
+    Thread(target=cardinal.telegram.send_notification, args=(text, replaces)).start()
 
 
 # Хэндлеры для REGISTER_TO_DELIVERY_EVENT
@@ -287,7 +320,7 @@ def send_delivery_notification_handler(order: Order, delivery_text: str, cardina
 
 
 # Хэндлеры для REGISTER_TO_ORDERS_UPDATE_EVENT
-def updates_lots_state_handler(event: OrderEvent, cardinal: Cardinal, *args):
+def activate_lots_handler(event: OrderEvent, cardinal: Cardinal, *args):
     """
     Активирует деактивированные лоты.
 
@@ -347,7 +380,8 @@ def send_bot_started_notification_handler(cardinal: Cardinal, *args):
 REGISTER_TO_NEW_MESSAGE_EVENT = [
     log_msg_handler,
     send_response_handler,
-    send_command_notification_handler
+    send_command_notification_handler,
+    send_new_message_notification
 ]
 
 REGISTER_TO_RAISE_EVENT = [
@@ -355,16 +389,18 @@ REGISTER_TO_RAISE_EVENT = [
 ]
 
 REGISTER_TO_ORDERS_UPDATE_EVENT = [
-    updates_lots_state_handler
+    activate_lots_handler
 ]
 
 REGISTER_TO_NEW_ORDER_EVENT = [
     send_new_order_notification_handler,
-    delivery_product_handler
+    deliver_product_handler
 ]
 
 REGISTER_TO_DELIVERY_EVENT = [
     send_delivery_notification_handler
 ]
 
-REGISTER_TO_START_EVENT = [send_bot_started_notification_handler]
+REGISTER_TO_START_EVENT = [
+    send_bot_started_notification_handler
+]

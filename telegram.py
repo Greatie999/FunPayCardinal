@@ -3,7 +3,7 @@ import telebot
 from telebot import types
 import logging
 import traceback
-from colorama import Fore
+import re
 
 from Utils import telegram_tools
 
@@ -116,10 +116,18 @@ class TGBot:
                 logger.error("Произошла ошибка в работе Telegram бота.")
                 logger.debug(traceback.format_exc())
 
-    def send_notification(self, text: str):
+    def send_notification(self, text: str, replaces: list[list[str]] | None = None):
+        escape_characters = "_*[]()~`>#+-=|{}.!"
+        for char in escape_characters:
+            text = text.replace(char, f"\\{char}")
+
+        if replaces:
+            for i in replaces:
+                text = text.replace(i[0], i[1])
+
         for chat_id in self.chat_ids:
             try:
-                self.bot.send_message(chat_id, text)
+                self.bot.send_message(chat_id, text, parse_mode='MarkdownV2')
             except:
                 logger.error("Произошла ошибка при отправке уведомления в Telegram.")
                 logger.debug(traceback.format_exc())

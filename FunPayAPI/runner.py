@@ -18,8 +18,8 @@ class MessageEvent(Event):
                  node_id: int,
                  message_text: str,
                  sender_username: str,
-                 send_time: str,
-                 tag: str):
+                 send_time: str | None,
+                 tag: str | None):
         super(MessageEvent, self).__init__(EventTypes.NEW_MESSAGE)
         self.node_id = node_id
         self.sender_username = sender_username
@@ -103,7 +103,8 @@ class Runner:
                     # Если это старое сообщение (сохранено в self.last_messages) -> пропускаем.
                     if node_id in self.last_messages:
                         check_msg = self.last_messages[node_id]
-                        if check_msg.message_text == message_text and check_msg.send_time == send_time:
+                        if check_msg.message_text == message_text and (
+                                check_msg.send_time is not None and check_msg.send_time == send_time):
                             continue
 
                     sender_username = msg.find("div", {"class": "media-user-name"}).text
