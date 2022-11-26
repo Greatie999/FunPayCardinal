@@ -19,8 +19,17 @@ import logging
 import traceback
 from threading import Thread
 
+import telebot.types
+
 
 logger = logging.getLogger("Cardinal.handlers")
+
+
+def create_reply_button(node_id: int):
+    keyboard = telebot.types.InlineKeyboardMarkup()
+    reply_button = telebot.types.InlineKeyboardButton(text="Ответить", callback_data=f"reply_to_node_id:{node_id}")
+    keyboard.add(reply_button)
+    return keyboard
 
 
 # Хэндлеры для REGISTER_TO_NEW_MESSAGE_EVENT
@@ -59,7 +68,9 @@ def send_new_message_notification(msg: MessageEvent, cardinal: Cardinal, *args):
     replaces = [
         ["$userlink", f"[{msg.sender_username}](https://funpay.com/chat?node={msg.node_id})"]
     ]
-    Thread(target=cardinal.telegram.send_notification, args=(text, replaces)).start()
+
+    button = create_reply_button(msg.node_id)
+    Thread(target=cardinal.telegram.send_notification, args=(text, replaces, button)).start()
 
 
 def send_response(msg: MessageEvent, cardinal: Cardinal, *args) -> bool:

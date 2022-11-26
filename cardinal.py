@@ -347,10 +347,10 @@ class Cardinal:
                                                             msg.tag)
 
                 self.runner.last_messages[msg.node_id] = new_msg_obj
-            logger.info(f"Отправил сообщение пользователю {msg.sender_username}.")
+            logger.info(f"Отправил сообщение в чат $YELLOW{msg.node_id}.")
             return True
         else:
-            logger.warning(f"Произошла ошибка при отправке сообщения пользователю {msg.sender_username}.")
+            logger.warning(f"Произошла ошибка при отправке сообщения в чат $YELLOW{msg.node_id}.")
             logger.debug(f"{response}")
             return False
 
@@ -482,6 +482,7 @@ class Cardinal:
 
         if int(self.main_config["Telegram"]["enabled"]):
             self.__init_telegram()
+            self.telegram.cardinal = self
 
     def run(self):
         """
