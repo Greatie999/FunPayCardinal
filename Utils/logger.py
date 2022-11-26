@@ -4,6 +4,18 @@ import logging.handlers
 from colorama import Fore, Back, Style
 
 
+def add_colors(text: str) -> str:
+    colors = {
+        "$YELLOW": Fore.YELLOW,
+        "$CYAN": Fore.CYAN,
+        "$MAGENTA": Fore.MAGENTA,
+        "$BLUE": Fore.BLUE,
+    }
+    for c in colors:
+        text = text.replace(c, colors[c])
+    return text
+
+
 class CLILoggerFormatter(logging.Formatter):
     """
     Форматтер для вывода логов в консоль.
@@ -27,6 +39,7 @@ class CLILoggerFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         msg = record.getMessage()
+        msg = add_colors(msg)
         msg = msg.replace("$color", self.colors[record.levelno])
         record.msg = msg
         log_format = self.log_format.replace("$color", self.colors[record.levelno])\

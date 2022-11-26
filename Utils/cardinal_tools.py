@@ -1,11 +1,13 @@
 import os
 import json
-from colorama import Fore
 from datetime import datetime
 
 import FunPayAPI.account
 import FunPayAPI.categories
 import FunPayAPI.runner
+import FunPayAPI.orders
+
+import Utils.exceptions as excs
 
 
 def cache_categories(category_list: list[FunPayAPI.categories.Category]) -> None:
@@ -75,11 +77,11 @@ def create_greetings(account: FunPayAPI.account):
 
     currency = f" {account.currency}" if account.currency is not None else ""
 
-    greetings_text = f"""{greetings}, {Fore.CYAN}{account.username}.
-Ваш ID: {Fore.YELLOW}{account.id}.
-Ваш текущий баланс: {Fore.YELLOW}{account.balance}{currency}.
-Текущие незавершенные сделки: {Fore.YELLOW}{account.active_sales}.
-{Fore.MAGENTA}Удачной торговли!"""
+    greetings_text = f"""{greetings}, $CYAN{account.username}.
+Ваш ID: $YELLOW{account.id}.
+Ваш текущий баланс: $YELLOW{account.balance}{currency}.
+Текущие незавершенные сделки: $YELLOW{account.active_sales}.
+$MAGENTAУдачной торговли!"""
     return greetings_text
 
 
@@ -138,16 +140,27 @@ def get_product_from_json(path: str) -> list[str, int] | None:
 
     products = json.loads(products)
     if not len(products):
-        return None
+        raise excs.NoProductsError(path)
 
     product = str(products[0])
     products.pop(0)
     amount = len(products)
-    products = json.dumps(products, indent=4)
+    products = json.dumps(products, indent=4, ensure_ascii=False)
 
     with open(path, "w", encoding="utf-8") as f:
         f.write(products)
     return [product, amount]
+
+
+def add_product_to_json(path: str, product: str) -> None:
+    with open(path, "r", encoding="utf-8") as f:
+        products = f.read()
+
+    products = json.loads(products)
+    products.append(product)
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(json.dumps(products, indent=4, ensure_ascii=False))
 
 
 def format_msg_text(text: str, msg: FunPayAPI.runner.MessageEvent):
@@ -168,6 +181,31 @@ def format_msg_text(text: str, msg: FunPayAPI.runner.MessageEvent):
         "$full_time": time_full,
         "$username": msg.sender_username,
         "$message_text": msg.message_text
+    }
+
+    for var in variables:
+        text = text.replace(var, variables[var])
+    return text
+
+
+def format_order_text(text: str, order: FunPayAPI.orders.Order) -> str:
+    date_obj = datetime.now()
+    month_name = get_month_name(date_obj.month)
+    date = date_obj.strftime("%d.%m.%Y")
+    str_date = f"{date_obj.day} {month_name}"
+    str_full_date = str_date + f" {date_obj.year} года"
+
+    time_ = date_obj.strftime("%H:%M")
+    time_full = date_obj.strftime("%H:%M:%S")
+
+    variables = {
+        "$full_date_text": str_full_date,
+        "$date_text": str_date,
+        "$date": date,
+        "$time": time_,
+        "$full_time": time_full,
+        "$username": order.buyer_name,
+        "$order_name": order.title,
     }
 
     for var in variables:

@@ -140,7 +140,6 @@ def load_auto_response_config(config_path: str) -> configparser.ConfigParser:
                 config.set(cmd.strip(), param, copy_obj[param])
         config.remove_section(commands)
 
-    print(config.sections())
     return config
 
 

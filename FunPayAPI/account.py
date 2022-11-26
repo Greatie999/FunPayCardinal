@@ -8,7 +8,7 @@ from typing import TypedDict
 from .categories import Category
 from .enums import Links, OrderStatuses, CategoryTypes
 from .orders import Order
-from .other import get_wait_time_from_raise_response
+from .other import get_wait_time_from_raise_response, gen_rand_tag
 
 
 class RaiseCategoriesResponse(TypedDict):
@@ -106,7 +106,7 @@ class Account:
                            include_outstanding: bool = True,
                            include_completed: bool = False,
                            include_refund: bool = False,
-                           exclude: list[int] | None = None,
+                           exclude: list[str] | None = None,
                            timeout: float = 10.0) -> dict[str, Order]:
         """
         Получает список заказов на аккаунте.
@@ -135,6 +135,8 @@ class Account:
             raise Exception  # todo: создать и добавить кастомное исключение: невалидный токен.
 
         order_divs = parser.find_all("a", {"class": "tc-item"})
+        if order_divs is None:
+            return {}
         parsed_orders = {}
 
         for div in order_divs:
@@ -283,6 +285,73 @@ class Account:
                 return {"complete": True, "wait": 3600, "raised_category_names": category_names, "response": response}
             else:
                 return {"complete": False, "wait": 10, "raised_category_names": [], "response": response}
+
+    def get_lot_info(self, offer_id: int, game_id: int) -> list[dict[str, str]]:
+        headers = {
+            "accept": "*/*",
+            "content-type": "application/json",
+            "x-requested-with": "XMLHttpRequest",
+            "cookie": f"golden_key={self.golden_key}; PHPSESSID={self.session_id}"
+        }
+        tag = gen_rand_tag()
+        payload = {
+            "tag": tag,
+            "offer": offer_id,
+            "node": game_id
+        }
+
+        query = f"?tag={tag}&offer={offer_id}&node={game_id}"
+
+        response = requests.get(f"{Links.BASE_URL}/lots/offerEdit{query}", headers=headers, data=payload)
+        json_response = response.json()
+        parser = BeautifulSoup(json_response["html"], "lxml")
+
+        input_fields = parser.find_all("input")
+        text_fields = parser.find_all("textarea")
+        selection_fields = parser.find_all("select")
+        result = []
+        for field in input_fields:
+            name = field["name"]
+            value = field.get("value")
+            if value is None:
+                value = ""
+            result.append({"name": name, "value": value})
+
+        for field in text_fields:
+            name = field["name"]
+            text = field.text
+            if not text:
+                text = ""
+            result.append({"name": name, "value": text})
+
+        for field in selection_fields:
+            name = field["name"]
+            value = field.find("option", selected=True)["value"]
+            result.append({"name": name, "value": value})
+
+        return result
+
+    def change_lot_state(self, offer_id: int, game_id: int, state: bool = True):
+        lot_info = self.get_lot_info(offer_id, game_id)
+
+        payload = {}
+        for field in lot_info:
+            if field["name"] == "active":
+                if state:
+                    field["value"] = "on"
+                else:
+                    continue
+            payload[field["name"]] = field["value"]
+
+        payload["location"] = "trade"
+
+        headers = {
+            "accept": "*/*",
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "x-requested-with": "XMLHttpRequest",
+            "cookie": f"golden_key={self.golden_key}; PHPSESSID={self.session_id}"
+        }
+        response = requests.post(f"{Links.BASE_URL}/lots/offerSave", headers=headers, data=payload)
 
 
 def get_account(token: str, timeout: float = 10.0) -> Account:
