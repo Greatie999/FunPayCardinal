@@ -216,6 +216,8 @@ def delivery_product_handler(order: Order, cardinal: Cardinal, *args):
     :param cardinal: экземпляр кардинала.
     :return:
     """
+    if not int(cardinal.main_config["FunPay"]["autoDelivery"]):
+        return
     try:
         result = deliver_product(order, cardinal, *args)
         if result is None:

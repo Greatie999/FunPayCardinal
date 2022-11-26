@@ -314,13 +314,6 @@ class Cardinal:
         """
         Запускает бесконечный цикл получения эвентов от FunPay.
         """
-        if not any(
-                [
-                    int(self.main_config["FunPay"]["autoResponse"]),
-                    int(self.main_config["FunPay"]["autoDelivery"])
-                ]
-        ):
-            return None
         logger.info("$CYANRunner запущен.")
         while self.running:
             try:
@@ -395,6 +388,7 @@ class Cardinal:
         if any([
             int(self.main_config["FunPay"]["autoDelivery"]),
             int(self.main_config["FunPay"]["autoResponse"]),
+            int(self.main_config["FunPay"]["autoRestore"]),
             int(self.main_config["FunPay"]["infiniteOnline"])
         ]):
             self.__init_runner()
