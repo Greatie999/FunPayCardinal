@@ -27,14 +27,14 @@ logger = logging.getLogger("Cardinal")
 class Cardinal:
     def __init__(self,
                  main_config: configparser.ConfigParser,
-                 lots_config: configparser.ConfigParser,
+                 # lots_config: configparser.ConfigParser,
                  auto_response_config: configparser.ConfigParser,
                  auto_delivery_config: configparser.ConfigParser
                  ):
 
         # Конфиги
         self.main_config = main_config
-        self.lots_config = lots_config
+        # self.lots_config = lots_config
         self.auto_response_config = auto_response_config
         self.auto_delivery_config = auto_delivery_config
 

@@ -38,9 +38,10 @@ try:
     MAIN_CONFIG = cfg_loader.load_main_config(main_config_path)
     logger.info("$MAGENTAОбработал конфиг _main.cfg.")
 
-    lots_config_path = get_abs_path("configs/lots.cfg")
-    LOTS_CONFIG = cfg_loader.load_lots_config(lots_config_path)
-    logger.info("$MAGENTAОбработал конфиг lots.cfg.")
+    # Временно отключено.
+    #lots_config_path = get_abs_path("configs/lots.cfg")
+    #LOTS_CONFIG = cfg_loader.load_lots_config(lots_config_path)
+    #logger.info("$MAGENTAОбработал конфиг lots.cfg.")
 
     auto_response_config_path = get_abs_path("configs/auto_response.cfg")
     AUTO_RESPONSE_CONFIG = cfg_loader.load_auto_response_config(auto_response_config_path)
@@ -69,7 +70,7 @@ if __name__ == '__main__':
     try:
         main_program = Cardinal(
             MAIN_CONFIG,
-            LOTS_CONFIG,
+            # LOTS_CONFIG,
             AUTO_RESPONSE_CONFIG,
             AUTO_DELIVERY_CONFIG
         )
