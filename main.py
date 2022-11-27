@@ -28,6 +28,7 @@ colorama.init()
 if not os.path.exists("logs"):
     os.mkdir("logs")
 logging.config.dictConfig(CONFIG)
+logging.raiseExceptions = False
 logger = logging.getLogger("main")
 logger.debug("Новый запуск.")
 

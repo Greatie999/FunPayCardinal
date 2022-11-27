@@ -1,9 +1,11 @@
+import sys
 import os.path
 import time
 import configparser
 import traceback
 import logging
 from typing import Callable, Generator
+import importlib.util
 
 from threading import Thread
 
@@ -263,11 +265,13 @@ class Cardinal:
         if not len(plugins):
             logger.info("Плагины не обнаружены.")
             return
-
+            
+        sys.path.append("plugins")
         for file in plugins:
             try:
-                plugin = __import__("plugins", globals(), locals(), [f"{file[:-3]}"])
-                plugin = getattr(plugin, file[:-3])
+                spec = importlib.util.spec_from_file_location(f"plugins.{file[:-3]}", f"plugins/{file}")
+                plugin = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(plugin)
                 logger.info(f"Плагин $YELLOW{file}$color загружен.")
             except:
                 logger.error(f"Не удалось загрузить плагин {file}. Подробнее в файле логов.")
@@ -321,8 +325,8 @@ class Cardinal:
                 self.game_ids[cat.game_id] = next_time
                 if min_next_time == -1 or next_time < min_next_time:
                     min_next_time = next_time
-                self.run_handlers(self.raise_lots_handlers, [cat.game_id, response["raised_category_names"],
-                                                             response["wait"], self, ])
+                self.run_handlers(self.raise_lots_handlers, (cat.game_id, response["raised_category_names"],
+                                                             response["wait"], self, ))
         return min_next_time
 
     def send_message(self, msg: FunPayAPI.runner.MessageEvent):
@@ -418,7 +422,7 @@ class Cardinal:
         for events in self.listen_runner():
             for event in events:
                 if event.type == FunPayAPI.enums.EventTypes.NEW_MESSAGE:
-                    self.run_handlers(self.message_event_handlers, [event, self, ])
+                    self.run_handlers(self.message_event_handlers, (event, self, ))
 
                 elif event.type == FunPayAPI.enums.EventTypes.NEW_ORDER:
                     self.process_orders(event)
@@ -430,7 +434,7 @@ class Cardinal:
         :return:
         """
         # Обновляем список ордеров.
-        self.run_handlers(self.orders_updates_event_handlers, [event, self, ])
+        self.run_handlers(self.orders_updates_event_handlers, (event, self, ))
         attempts = 3
         new_orders = {}
         while attempts:
@@ -451,7 +455,7 @@ class Cardinal:
         # Обрабатываем каждый ордер по отдельности.
         for order in new_orders:
             self.processed_orders[order.id] = order
-            self.run_handlers(self.new_order_event_handlers, [order, self, ])
+            self.run_handlers(self.new_order_event_handlers, (order, self, ))
 
     # Функции запуска / остановки Кардинала.
     def init(self):
@@ -488,6 +492,8 @@ class Cardinal:
             self.__init_telegram()
             self.telegram.cardinal = self
 
+        self.run_handlers(self.bot_init_handlers, (self, ))
+
     def run(self):
         """
         Запускает все потоки.
@@ -505,7 +511,7 @@ class Cardinal:
         if self.telegram:
             Thread(target=self.telegram.run).start()
 
-        self.run_handlers(self.bot_start_handlers, [self, ])
+        self.run_handlers(self.bot_start_handlers, (self, ))
 
     def stop(self):
         """
