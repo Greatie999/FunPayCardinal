@@ -21,12 +21,13 @@ class UsersLotsInfoFormat(TypedDict):
 def get_user_lots_info(user_id: int, include_currency: bool = False, timeout: float = 10.0) -> UsersLotsInfoFormat:
     """
     Получает полную информацию о лотах пользователя.
+
     :param user_id: ID пользователя.
     :param include_currency: включать ли в список категории / лоты, относящиеся к игровой валюте.
     :param timeout: тайм-аут ожидания ответа.
     :return: {"categories": [категории пользователя], "lots": лоты пользователя.}
-    У экземпляров Category и Lot game_id = None. Для получения id категории нужно использовать
-    FunPayAPI.account.get_category_game_id
+    У экземпляров Category и Lot game_id = None. Для получения game_id категории нужно использовать
+    FunPayAPI.account.get_category_game_id().
     """
     response = requests.get(f"{Links.USER}/{user_id}/", timeout=timeout)
     if response.status_code == 404:

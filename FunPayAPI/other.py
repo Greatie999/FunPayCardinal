@@ -10,10 +10,13 @@ import random
 def get_wait_time_from_raise_response(response: str) -> int:
     """
     Парсит ответ FunPay на запрос о поднятии лотов.
+
     :param response: текст ответа.
     :return: Примерное время ожидание до следующего поднятия лотов (в секундах).
     """
-    if "сек" in response:
+    if "секунду." in response:
+        return 1
+    elif "сек" in response:
         response = response.split()
         return int(response[1])
     elif "минуту." in response:
@@ -30,8 +33,9 @@ def get_wait_time_from_raise_response(response: str) -> int:
 
 def gen_rand_tag() -> str:
     """
-    Генерирует случайный тег для запроса (для runner'a)
-    :return: сгенерированный тег
+    Генерирует случайный тег для запроса (для runner'а).
+
+    :return: сгенерированный тег.
     """
     simbols = string.digits + string.ascii_lowercase
     tag = "".join(random.choice(simbols) for _ in range(10))

@@ -83,7 +83,7 @@ def create_greetings(account: FunPayAPI.account):
     greetings_text = f"""{greetings}, $CYAN{account.username}.
 Ваш ID: $YELLOW{account.id}.
 Ваш текущий баланс: $YELLOW{account.balance}{currency}.
-Текущие незавершенные сделки: $YELLOW{account.active_sales}.
+Текущие незавершенные сделки: $YELLOW{account.active_orders}.
 Удачной торговли!"""
     return greetings_text
 

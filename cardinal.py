@@ -203,7 +203,11 @@ class Cardinal:
         """
         while True:
             try:
-                self.processed_orders = self.account.get_account_orders(include_completed=True)
+                orders = self.account.get_account_orders(include_completed=True)
+                orders_dict = {}
+                for order in orders:
+                    orders_dict[order.id] = order
+                self.processed_orders = orders_dict
                 logger.info(f"$MAGENTAПолучил информацию об ордерах аккаунта.")
                 break
             except TimeoutError:

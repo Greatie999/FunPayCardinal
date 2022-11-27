@@ -1,3 +1,8 @@
+"""
+В данном модуле описан класс категории FunPay.
+"""
+
+
 from .enums import CategoryTypes
 
 
@@ -8,7 +13,8 @@ class Category:
     def __init__(self, id_: int, game_id: int | None, title: str, edit_lots_link: str, public_link: str,
                  type_: CategoryTypes):
         """
-        :param id_: id категории.
+        :param id_: ID категории.
+        :param game_id: ID игры, к которой относится категория.
         :param title: название категории.
         :param edit_lots_link: ссылка на страницу редактирования лотов данной категории.
         :param public_link: ссылка на все лоты всех пользователей в данной категории.

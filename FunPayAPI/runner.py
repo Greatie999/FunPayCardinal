@@ -1,3 +1,8 @@
+"""
+В данном модуле написаны функции и классы, позволяющие отправлять запросы к FunPay с помощью FunPay runner'а.
+"""
+
+
 import json
 import requests
 from bs4 import BeautifulSoup
@@ -9,17 +14,33 @@ from .enums import Links, EventTypes
 
 
 class Event:
+    """
+    Базовый класс для всех событий.
+    """
     def __init__(self, e_type: EventTypes):
+        """
+        :param e_type: тип события.
+        """
         self.type = e_type
 
 
 class MessageEvent(Event):
+    """
+    Класс события нового сообщения.
+    """
     def __init__(self,
                  node_id: int,
                  message_text: str,
                  sender_username: str | None,
                  send_time: str | None,
                  tag: str | None):
+        """
+        :param node_id: ID чата.
+        :param message_text: текст сообщения.
+        :param sender_username: никнейм отправителя (название чата)
+        :param send_time: время отправления.
+        :param tag: тэг runner'а.
+        """
         super(MessageEvent, self).__init__(EventTypes.NEW_MESSAGE)
         self.node_id = node_id
         self.sender_username = sender_username
@@ -29,13 +50,23 @@ class MessageEvent(Event):
 
 
 class OrderEvent(Event):
+    """
+     Класс события изменения в списке ордеров.
+     """
     def __init__(self, buyer: int, seller: int):
+        """
+        :param buyer: кол-во покупок на аккаунте.
+        :param seller: кол-во продаж на аккаунте.
+        """
         super(OrderEvent, self).__init__(EventTypes.NEW_ORDER)
         self.buyer = buyer
         self.seller = seller
 
 
 class Runner:
+    """
+    Класс runner'а.
+    """
     def __init__(self, account: Account, timeout: float = 10.0):
         self.message_tag: str = gen_rand_tag()
         self.order_tag: str = gen_rand_tag()

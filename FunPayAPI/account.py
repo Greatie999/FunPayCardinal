@@ -1,3 +1,9 @@
+"""
+В данном модуле написаны функции и классы, позволяющие получать / изменять данные аккаунта FunPay.
+Для всех функций и методов требуется golden_key аккаунта FunPay.
+"""
+
+
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -13,7 +19,7 @@ from .other import get_wait_time_from_raise_response, gen_rand_tag
 
 class RaiseCategoriesResponse(TypedDict):
     """
-    Type-класс, описывающий структуру словаря, возвращаемого методом Account.raise_game_categories
+    Type-класс, описывающий структуру словаря, возвращаемого методом Account.raise_game_categories.
     """
     complete: bool
     wait: int
@@ -26,14 +32,14 @@ class Account:
     Класс для работы с аккаунтом FunPay.
     """
     def __init__(self, app_data: dict, id_: int, username: str, balance: float, currency: str | None,
-                 active_sales: int, golden_key: str, csrf_token: str, session_id: str, last_update: int):
+                 active_orders: int, golden_key: str, csrf_token: str, session_id: str, last_update: int):
         """
-        :param app_data: словарь с данными из <body data-app-data=>
+        :param app_data: словарь с данными из <body data-app-data=>.
         :param id_: id пользователя.
         :param username: имя пользователя.
         :param balance: баланс пользователя.
         :param currency: знак валюты на аккаунте.
-        :param active_sales: активные продажи пользователя.
+        :param active_orders: активные ордеры пользователя.
         :param golden_key: golden_key (токен) аккаунта.
         :param csrf_token: csrf токен.
         :param session_id: PHPSESSID.
@@ -44,7 +50,7 @@ class Account:
         self.username = username
         self.balance = balance
         self.currency = currency
-        self.active_sales = active_sales
+        self.active_orders = active_orders
         self.golden_key = golden_key
         self.csrf_token = csrf_token
         self.session_id = session_id
@@ -52,13 +58,14 @@ class Account:
         # Сохраненные переписки. Для того, что бы при новом ордере заново не отправлять запрос на получение чатов.
         self.chats_html: str | None = None
 
-    def send_message(self, node_id: int, text: str):
+    def send_message(self, node_id: int, text: str, timeout: float = 10.0) -> dict:
         """
         Отправляет сообщение в переписку с ID node_id.
 
         :param node_id: ID переписки.
         :param text: текст сообщения.
-        :return: ответ сервера FunPay.
+        :param timeout: тайм-аут ожидания ответа.
+        :return: ответ FunPay.
         """
         if not text.strip():
             raise Exception  # todo: создать и добавить кастомное исключение: пустое сообщение.
@@ -82,14 +89,15 @@ class Account:
             "request": json.dumps(request),
             "csrf_token": self.csrf_token
         }
-        response = requests.post(Links.RUNNER, headers=headers, data=payload)
+        response = requests.post(Links.RUNNER, headers=headers, data=payload, timeout=timeout)
         json_response = response.json()
         return json_response
 
     def get_node_id_by_username(self, username: str, force_request: bool = False) -> int | None:
         """
         Парсит self.chats_html и ищет node_id чата по username'у.
-        Если self.chats_html is None -> делает запрос на фанпей (будет сделано в будущем)
+        Если self.chats_html is None -> делает запрос к FunPay (будет сделано в будущем).
+
         :param username: никнейм пользователя (искомого чата).
         :param force_request: пропустить ли поиск в self.chats_html и отправить ли сразу запрос к FunPay.
         :return: node_id чата или None, если чат не найден.
@@ -107,16 +115,16 @@ class Account:
                            include_completed: bool = False,
                            include_refund: bool = False,
                            exclude: list[str] | None = None,
-                           timeout: float = 10.0) -> dict[str, Order]:
+                           timeout: float = 10.0) -> list[Order]:
         """
-        Получает список заказов на аккаунте.
+        Получает список ордеров на аккаунте.
 
         :param include_outstanding: включить в список оплаченные (но не завершенные) заказы.
         :param include_completed: включить в список завершенные заказы.
         :param include_refund: включить в список заказы, за которые оформлен возврат.
         :param exclude: список ID заказов, которые нужно исключить из итогового списка.
         :param timeout: тайм-аут ожидания ответа.
-        :return: Словарь с заказами: {id заказа: экземпляр класса Order}
+        :return: Список с ордерами.
         """
         exclude = exclude if exclude else []
         headers = {"cookie": f"golden_key={self.golden_key};"}
@@ -136,8 +144,8 @@ class Account:
 
         order_divs = parser.find_all("a", {"class": "tc-item"})
         if order_divs is None:
-            return {}
-        parsed_orders = {}
+            return []
+        parsed_orders = []
 
         for div in order_divs:
             order_div_classname = div.get("class")
@@ -167,7 +175,7 @@ class Account:
             order_object = Order(id_=order_id, title=title, price=price, buyer_username=buyer_name, buyer_id=buyer_id,
                                  status=status)
 
-            parsed_orders[order_id] = order_object
+            parsed_orders.append(order_object)
 
         return parsed_orders
 
@@ -210,7 +218,7 @@ class Account:
         Отправляет запрос на получение modal-формы для поднятия лотов категории category.id.
         !ВНИМЕНИЕ! Для отправки запроса необходимо, чтобы category.game_id != None.
         !ВНИМАНИЕ! Если на аккаунте только 1 категория, относящаяся к игре category.game_id,
-        то FunPay поднимет данную категорию в списке без появления modal-формы с выбором других категорий.
+        то FunPay поднимет данную категорию в списке без отправления modal-формы с выбором других категорий.
 
         :param category: экземпляр класса Category.
         :param timeout: тайм-аут получения ответа.
@@ -237,12 +245,12 @@ class Account:
                               timeout: float = 10.0) -> RaiseCategoriesResponse:
         """
         Поднимает лоты всех категорий игры category.game_id.
-        !ВНИМЕНИЕ! Для поднятия лотов необходимо, чтобы category.game_id != None
+        !ВНИМЕНИЕ! Для поднятия лотов необходимо, чтобы category.game_id != None.
 
         :param category: экземпляр класса Category.
         :param exclude: список из названий категорий, которые не нужно поднимать.
         :param timeout: тайм-аут ожидания ответа.
-        :return:
+        :return: ответ FunPay.
         """
         check = self.request_lots_raise(category, timeout)
         if check.get("error") and check.get("msg") and "Подождите" in check.get("msg"):
@@ -253,7 +261,6 @@ class Account:
             return {"complete": False, "wait": 10, "raised_category_names": [], "response": check}
         elif check.get("error") is not None and not check.get("error"):
             # Если была всего 1 категория и FunPay ее поднял без отправки modal-окна
-            print("1 cat")
             return {"complete": True, "wait": 3600, "raised_category_names": [category.title], "response": check}
         elif check.get("modal"):
             # Если же появилась модалка, то парсим все чекбоксы и отправляем запрос на поднятие всех категорий, кроме тех,
@@ -288,10 +295,11 @@ class Account:
 
     def get_lot_info(self, lot_id: int, game_id: int) -> list[dict[str, str]]:
         """
-        Получает значения всех полей лота.
+        Получает значения всех полей лота (в окне редактирования лота).
+
         :param lot_id: ID лота.
         :param game_id: ID игры, к которой относится лот.
-        :return: список из объектов {"название поля": "значение поля"}
+        :return: словарь {"название поля": "значение поля"}.
         """
         headers = {
             "accept": "*/*",
@@ -339,7 +347,8 @@ class Account:
 
     def change_lot_state(self, lot_id: int, game_id: int, state: bool = True) -> dict:
         """
-        Изменяет состояние лота (активное / неактивное)
+        Изменяет состояние лота (активное / неактивное).
+
         :param lot_id: ID лота.
         :param game_id: ID игры, к которой относится лот.
         :param state: Целевое состояние лота.
@@ -374,7 +383,7 @@ def get_account(token: str, timeout: float = 10.0) -> Account:
 
     :param token: golden_key (токен) аккаунта.
     :param timeout: тайм-аут получения ответа.
-    :return: экземпляр класса Account
+    :return: экземпляр класса Account.
     """
     headers = {"cookie": f"golden_key={token}"}
 
@@ -405,5 +414,5 @@ def get_account(token: str, timeout: float = 10.0) -> Account:
     session_id = cookies["PHPSESSID"]
 
     return Account(app_data=app_data, id_=userid, username=username, balance=balance_count, currency=balance_currency,
-                   active_sales=active_sales,
-                   golden_key=token, csrf_token=csrf_token, session_id=session_id, last_update=int(time.time()))
+                   active_orders=active_sales, golden_key=token, csrf_token=csrf_token, session_id=session_id,
+                   last_update=int(time.time()))

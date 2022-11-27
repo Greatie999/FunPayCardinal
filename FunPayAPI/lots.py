@@ -1,3 +1,8 @@
+"""
+В данном модуле описан класс лота FunPay.
+"""
+
+
 class Lot:
     """
     Класс, описывающий лот.
@@ -13,7 +18,7 @@ class Lot:
         :param category_id: ID категории, к которой относится лот.
         :param game_id: ID игры, к которой относится лот.
         :param id_: ID лота.
-        :param server: сервер игры.
+        :param server: название сервера игры.
         :param title: название лота.
         :param price: цена лота.
         """

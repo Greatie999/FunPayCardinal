@@ -1,15 +1,20 @@
+"""
+В данном модуле описан класс ордера FunPay.
+"""
+
+
 from .enums import OrderStatuses
 
 
 class Order:
     """
-    Класс, описывающий заказ.
+    Класс, описывающий ордер.
     """
     def __init__(self, id_: str, title: str, price: float, buyer_username: str, buyer_id: int, status: OrderStatuses):
         """
-        :param id_: ID заказа.
-        :param title: Краткое описание заказа.
-        :param price: Оплаченная сумма за заказ.
+        :param id_: ID ордера.
+        :param title: Краткое описание ордера.
+        :param price: Оплаченная сумма за ордер.
         :param buyer_username: Псевдоним покупателя.
         :param buyer_id: ID покупателя.
         """

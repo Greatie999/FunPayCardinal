@@ -384,7 +384,7 @@ def send_bot_started_notification_handler(cardinal: Cardinal, *args):
     text = f"""Бот запущен!
 Аккаунт: {cardinal.account.username} | {cardinal.account.id}
 Баланс: {cardinal.account.balance}{curr}
-Незавершенных ордеров: {cardinal.account.active_sales}"""
+Незавершенных ордеров: {cardinal.account.active_orders}"""
     cardinal.telegram.send_notification(text)
 
 
