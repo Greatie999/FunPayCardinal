@@ -125,14 +125,13 @@ def load_auto_response_config(config_path: str) -> configparser.ConfigParser:
                     valid_values=["0", "1"], raise_ex_if_not_exists=False)
         check_param("notificationText", command, "auto_response.cfg", config[command], raise_ex_if_not_exists=False)
 
-        # Если в названии команды есть "," - значит это несколько команд.
-        if "," in command:
+        # Если в названии команды есть "|" - значит это несколько команд.
+        if "|" in command:
             multi_commands.append(command)
 
-    #
     for commands in multi_commands:
         copy_obj = config[commands]
-        cmds = commands.split(",")
+        cmds = commands.split("|")
 
         for cmd in cmds:
             config.add_section(cmd.strip())
