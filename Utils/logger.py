@@ -1,3 +1,8 @@
+"""
+В данном модуле написаны форматтеры для логгера и его конфигурация.
+"""
+
+
 import re
 import logging
 import logging.handlers

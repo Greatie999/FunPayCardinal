@@ -1,3 +1,8 @@
+"""
+В данном модуле написан Telegram бот.
+"""
+
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -64,6 +69,9 @@ class TGBot:
         logger.info("$MAGENTATelegram бот инициализирован.")
 
     def __init_commands(self):
+        """
+        Регистрирует хэндлеры.
+        """
         bot_instance = self.bot
 
         @bot_instance.message_handler(func=lambda msg: msg.from_user.id not in self.authorized_users)
@@ -180,6 +188,12 @@ class TGBot:
                 logger.debug(traceback.format_exc())
 
     def send_notification(self, text: str, replaces: list[list[str]] | None = None, reply_button=None):
+        """
+        Отправляет сообщение во все чаты для уведомлений из self.chat_ids
+        :param text: текст уведомления.
+        :param replaces: замены, которые нужно произвести ПОСЛЕ экранирования спец. символов.
+        :param reply_button: экземпляр кнопки.
+        """
         escape_characters = "_*[]()~`>#+-=|{}.!"
         for char in escape_characters:
             text = text.replace(char, f"\\{char}")
@@ -199,6 +213,9 @@ class TGBot:
                 logger.debug(traceback.format_exc())
 
     def run(self):
+        """
+        Запускает поллинг.
+        """
         try:
             logger.info(f"$CYANTelegram бот $YELLOW@{self.bot.user.username} $CYANзапущен.")
             self.bot.infinity_polling(logger_level=logging.DEBUG)

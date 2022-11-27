@@ -1,3 +1,8 @@
+"""
+В данном модуле написаны инструменты, которыми пользуется Кардинал в процессе своей работы.
+"""
+
+
 import os
 import json
 from datetime import datetime
@@ -136,10 +141,10 @@ def time_to_str(time_: int):
         time_str += f" {m}мин"
     if s:
         time_str += f" {s}сек"
-    return time_str
+    return time_str.strip()
 
 
-def get_product_from_json(path: str) -> list[str, int] | None:
+def get_product_from_json(path: str) -> list[str | int] | None:
     """
     Берет 1 единицу товара из файла.
 

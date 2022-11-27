@@ -1,3 +1,7 @@
+"""
+В данном модуле написаны функции для загрузки и проверки конфигов.
+"""
+
 import configparser
 import codecs
 import os
@@ -97,6 +101,7 @@ def load_main_config(config_path: str) -> configparser.ConfigParser:
 def load_lots_config(config_path: str) -> configparser.ConfigParser:
     """
     Парсит и проверяет на правильность конфиг лотов.
+    На данный момент не используется FunPay Cardinal'ом.
 
     :param config_path: путь до конфига лотов.
     :return: спарсеный конфиг лотов.
