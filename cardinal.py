@@ -329,7 +329,7 @@ class Cardinal:
         :param msg: объект MessageEvent.
         :return:
         """
-        if self.main_config["Other"]["botName"]:
+        if self.main_config["Other"]["botName"] != "-":
             msg.message_text = f"{self.main_config['Other']['botName']}\n" + msg.message_text
 
         response = self.account.send_message(msg.node_id, msg.message_text)
