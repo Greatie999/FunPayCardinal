@@ -94,7 +94,7 @@ def some_handler_5(game_id: int, category_names: list[str], cardinal: Cardinal, 
 
 def some_handler_6(cardinal: Cardinal, *args):
     """
-    Выполняется после инициализации кардинала (в данный момент не работает).
+    Выполняется после инициализации кардинала.
 
     :param cardinal: экземпляр Кардинала.
     """
@@ -152,7 +152,6 @@ REGISTER_TO_RAISE_EVENT = [
 ]
 
 # В данный список необходимо добавить все хэндлеры, которы должны вызываться после инициализации Кардинала.
-# В данный момент не работает.
 REGISTER_TO_INIT_EVENT = [
     some_handler_6
 ]
