@@ -449,9 +449,9 @@ class Cardinal:
             return
 
         # Обрабатываем каждый ордер по отдельности.
-        for order_id in new_orders:
-            self.processed_orders[order_id] = new_orders[order_id]
-            self.run_handlers(self.new_order_event_handlers, [new_orders[order_id], self, ])
+        for order in new_orders:
+            self.processed_orders[order.id] = order
+            self.run_handlers(self.new_order_event_handlers, [order, self, ])
 
     # Функции запуска / остановки Кардинала.
     def init(self):

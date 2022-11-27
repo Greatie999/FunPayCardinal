@@ -4,4 +4,7 @@
 /FunPayAPI/__pycache__
 /logs
 /storage/cache
+/build
+/dist
 test.py
+FunPay Cardinal.spec
