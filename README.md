@@ -76,7 +76,6 @@
 2. Скачайте [FunPay Cardinal](https://github.com/Woopertail/FunPayCardinal/archive/refs/heads/master.zip)
 3. Перенести папку `FunPayCardinal-master` в нужное вам место.
 4. Перейдите в папку `FunPayCardinal-master`.
-5. В адресной строке введите `cmd` и нажмите `Enter`.
-<img src="https://i.ibb.co/0mjkf9Q/explorer-Zcsm-Ife-XFl.png">
+5. В адресной строке введите `cmd` и нажмите `Enter`. <img src="https://i.ibb.co/0mjkf9Q/explorer-Zcsm-Ife-XFl.png">
 6. В открывшейся командной строке введите `pip install -r requirements.txt`. Дождитесь окончания загрузки пакетов.
 7. Закройте командную строку, настройте конфиги и запустите файл `Start.bat`.
