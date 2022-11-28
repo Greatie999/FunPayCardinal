@@ -70,7 +70,8 @@
 
 ## :arrow_down: Установка
 
-### :window: Windows
+### :large_blue_diamond: Windows
+
 1. Скачайте и установите [Python](https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe).
    1. При установке поставьте галочку у `Add python.exe to PATH` на первом экране установки.
 2. Скачайте [FunPay Cardinal](https://github.com/Woopertail/FunPayCardinal/archive/refs/heads/master.zip)
@@ -79,3 +80,18 @@
 5. В адресной строке введите `cmd` и нажмите `Enter`. <img src="https://i.ibb.co/0mjkf9Q/explorer-Zcsm-Ife-XFl.png">
 6. В открывшейся командной строке введите `pip install -r requirements.txt`. Дождитесь окончания загрузки пакетов.
 7. Закройте командную строку, настройте конфиги и запустите файл `Start.bat`.
+
+### :hotsprings: Linux (Ubuntu)
+
+1. Введите следующие команды для установки Python 3.11.
+   1. `sudo apt update`
+   2. `sudo apt install software-properties-common`
+   3. `sudo add-apt-repository ppa:deadsnakes/ppa`
+   4. `sudo apt update`
+   5. `sudo apt install python3.11 python3.11-dev python3.11-gdbm python3.11-venv`
+   6. `curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10`
+
+2. Скачайте FunPayCardinal с помощью команды `git clone https://github.com/woopertail/FunPayCardinal`
+3. Перейдите в папку `funpaycardinal` с помощью команрды `cd funpaycardinal`
+4. Установите нужные пакеты с помощью команды `python3.11 -m pip install -r requirements.txt`
+5. Настройте конфиги и запустите FunPay Cardinal с помощью команды `python3.11 main.py`
