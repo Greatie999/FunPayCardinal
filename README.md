@@ -16,6 +16,7 @@
 - [Установка](#arrow_down-установка)
   - [Windows](#large_blue_diamond-windows)
   - [Linux (Ubuntu)](#hotsprings-linux-ubuntu)
+- [Мне нужна помощь](#question-мне-нужна-помощь)
 
 
 ## :robot: **Возможности**
@@ -98,3 +99,6 @@
 3. Перейдите в папку `funpaycardinal` с помощью команрды `cd funpaycardinal`
 4. Установите нужные пакеты с помощью команды `python3.11 -m pip install -r requirements.txt`
 5. Настройте конфиги и запустите FunPay Cardinal с помощью команды `python3.11 main.py`
+
+## :question: Мне нужна помощь
+Если у вас остались какие-либо вопросы, мы с радостью ответим на них в нашем [Telegram канале](https://t.me/+i0iWTPQ0AS8xMDNi)
