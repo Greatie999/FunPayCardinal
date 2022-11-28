@@ -96,12 +96,14 @@
    3. `sudo add-apt-repository ppa:deadsnakes/ppa`
    4. `sudo apt update`
    5. `sudo apt install python3.11 python3.11-dev python3.11-gdbm python3.11-venv`
-   6. `curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11`
+   6. `sudo apt install curl`
+   7. `curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11`
 
-2. Скачайте FunPayCardinal с помощью команды `git clone https://github.com/woopertail/FunPayCardinal`
-3. Перейдите в папку `funpaycardinal` с помощью команрды `cd funpaycardinal`
-4. Установите нужные пакеты с помощью команды `python3.11 -m pip install -r requirements.txt`
-5. Настройте конфиги и запустите FunPay Cardinal с помощью команды `python3.11 main.py`
+2. Скачайте `git` с помощью команды `sudo apt install git`.
+3. Скачайте FunPayCardinal с помощью команды `git clone https://github.com/woopertail/FunPayCardinal`.
+4. Перейдите в папку `FunPayCardinal` с помощью команрды `cd FunPayCardinal`.
+5. Установите нужные пакеты с помощью команды `python3.11 -m pip install -r requirements.txt`.
+6. Настройте конфиги и запустите FunPay Cardinal с помощью команды `python3.11 main.py`.
 
 ## :hammer_and_wrench: Настройка конфигов
 
