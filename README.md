@@ -66,3 +66,17 @@
 
 - [FPC Newbie Greetings Plugin](https://github.com/Woopertail/FPC-Newbie_Greetings_Plugin) (отправляет приветственное сообщение пользователям, которые написали впервые)
 - [FPC Lot Deactivate Plugin](https://github.com/Woopertail/FPC-Lot_Deactivate_Plugin) (деактивирует лот, если для него закончились товары)
+
+
+## :arrow_down: Установка
+
+### :window: Windows
+1. Скачайте и установите [Python](https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe).
+   1. При установке поставьте галочку у `Add python.exe to PATH` на первом экране установки.
+2. Скачайте [FunPay Cardinal](https://github.com/Woopertail/FunPayCardinal/archive/refs/heads/master.zip)
+3. Перенести папку `FunPayCardinal-master` в нужное вам место.
+4. Перейдите в папку `FunPayCardinal-master`.
+5. В адресной строке введите `cmd` и нажмите `Enter`.
+<img src="https://i.ibb.co/0mjkf9Q/explorer-Zcsm-Ife-XFl.png">
+6. В открывшейся командной строке введите `pip install -r requirements.txt`. Дождитесь окончания загрузки пакетов.
+7. Закройте командную строку, настройте конфиги и запустите файл `Start.bat`.
