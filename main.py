@@ -2,6 +2,7 @@ import logging.config
 import os
 import sys
 import colorama
+from colorama import Fore, Style
 import traceback
 
 import Utils.config_loader as cfg_loader
@@ -32,6 +33,16 @@ logging.raiseExceptions = False
 logger = logging.getLogger("main")
 logger.debug("Новый запуск.")
 
+print(f"""{Fore.MAGENTA}█▀▀ █░█ █▄░█ █▀█ ▄▀█ █▄█  {Fore.CYAN} █▀▀ ▄▀█ █▀█ █▀▄ █ █▄░█ ▄▀█ █░░{Style.RESET_ALL}
+{Fore.MAGENTA}█▀░ █▄█ █░▀█ █▀▀ █▀█ ░█░  {Fore.CYAN} █▄▄ █▀█ █▀▄ █▄▀ █ █░▀█ █▀█ █▄▄{Style.RESET_ALL}""")
+print(f"{Fore.RED}{Style.BRIGHT}v0.0.1{Style.RESET_ALL}")
+print("\n")
+print(f"{Fore.MAGENTA}By {Fore.BLUE}{Style.BRIGHT}Woopertail{Style.RESET_ALL}\n")
+print(f"{Fore.MAGENTA} * GitHub: {Fore.BLUE}{Style.BRIGHT}github.com/woopertail/FunPayCardinal{Style.RESET_ALL}")
+print(f"{Fore.MAGENTA} * Telegram: {Fore.BLUE}{Style.BRIGHT}t.me/funpay_cardinal")
+print("\n\n")
+
+
 # Загружаем конфиги
 e = None
 try:
@@ -57,14 +68,14 @@ except (excs.SectionNotExists, excs.ParamNotExists, excs.ParamValueEmpty, excs.P
         excs.NoSuchProductFileError, excs.JSONParseError) as e:
     logger.error(e)
     logger.error("Завершаю программу...")
-    exit()
+    sys.exit()
 
 except Exception as e:
     logger.critical("Произошло необработанное исключение.")
     traceback_text = traceback.format_exc()
     logger.debug(traceback_text)
     logger.error("Завершаю программу...")
-    exit()
+    sys.exit()
 
 # Запускаем основную программу Cardinal
 if __name__ == '__main__':
@@ -81,4 +92,4 @@ if __name__ == '__main__':
         logger.critical("Произошла наикритическая ошибка, которая добила меня окончательно...")
         logger.critical("Срочно отправь лог файл разработчику!")
         logger.debug(traceback.format_exc())
-        exit()
+        sys.exit()
