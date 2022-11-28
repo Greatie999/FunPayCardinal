@@ -15,7 +15,7 @@
 - [Плагины](#electric_plug-плагины)
 - [Установка](#arrow_down-установка)
   - [Windows](#large_blue_diamond-windows)
-  - [Linux (Ubuntu)](hotsprings-linux-ubuntu)
+  - [Linux (Ubuntu)](#hotsprings-linux-ubuntu)
 
 
 ## :robot: **Возможности**
