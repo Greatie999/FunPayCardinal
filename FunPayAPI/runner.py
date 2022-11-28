@@ -70,13 +70,14 @@ class Runner:
     def __init__(self, account: Account, timeout: float = 10.0):
         self.message_tag: str = gen_rand_tag()
         self.order_tag: str = gen_rand_tag()
+        # Во время первого запроса все данные, полученные от FunPay не возвращаются в self.get_updates(), а сохраняются
+        # внутри класса.
         self.first_request = True
 
         self.account = account
         self.timeout = timeout
 
         self.last_messages: dict[int, MessageEvent] = {}
-        self.processed_orders: dict[str, OrderEvent] = {}
 
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(logging.NullHandler())
@@ -144,7 +145,7 @@ class Runner:
 
                     msg_object = MessageEvent(node_id=node_id, message_text=message_text, sender_username=sender_username,
                                               send_time=send_time, tag=self.message_tag)
-                    self.last_messages[node_id] = msg_object
+                    self.update_lat_message(msg_object)
                     if self.first_request:
                         continue
                     events.append(msg_object)
@@ -154,3 +155,11 @@ class Runner:
             self.first_request = False
 
         return events
+
+    def update_lat_message(self, msg: MessageEvent) -> None:
+        """
+        Вручную обновляет объект последнего сообщения в self.last_messages
+
+        :param msg: экземпляр FunPayAPI.runner.MessageEvent
+        """
+        self.last_messages[msg.node_id] = msg

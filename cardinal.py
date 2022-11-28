@@ -354,7 +354,7 @@ class Cardinal:
                                                             msg.send_time,
                                                             msg.tag)
 
-                self.runner.last_messages[msg.node_id] = new_msg_obj
+                self.runner.update_lat_message(new_msg_obj)
             logger.info(f"Отправил сообщение в чат $YELLOW{msg.node_id}.")
             return True
         else:
