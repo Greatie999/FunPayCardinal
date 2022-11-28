@@ -13,6 +13,9 @@
   - [Для разработчиков](#computer-для-разработчиков)
 
 - [Плагины](#electric_plug-плагины)
+- [Установка](#arrow_down-установка)
+  - [Windows](#large_blue_diamond-windows)
+  - [Linux (Ubuntu)](hotsprings-linux-ubuntu)
 
 
 ## :robot: **Возможности**
@@ -89,7 +92,7 @@
    3. `sudo add-apt-repository ppa:deadsnakes/ppa`
    4. `sudo apt update`
    5. `sudo apt install python3.11 python3.11-dev python3.11-gdbm python3.11-venv`
-   6. `curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10`
+   6. `curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11`
 
 2. Скачайте FunPayCardinal с помощью команды `git clone https://github.com/woopertail/FunPayCardinal`
 3. Перейдите в папку `funpaycardinal` с помощью команрды `cd funpaycardinal`
