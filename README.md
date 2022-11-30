@@ -1,6 +1,8 @@
 <h1 align="center">FunPay Cardinal</h1>
 <h4 align="center">Консольное приложение для автоматизации рутинных действий на FunPay</h4>
 
+<h2 align="center">Перед началом настоятельно рекомендую залететь в наш <a href="https://t.me/funpay_cardinal">Telegram чат (клик)</a>. Тут и поможем чем сможем и посидеть можно.</h2>
+
 ## :clipboard: **Содержание**
 
 - [Возможности](#robot-возможности)
