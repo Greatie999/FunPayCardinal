@@ -97,7 +97,8 @@
    4. `sudo apt update`
    5. `sudo apt install python3.11 python3.11-dev python3.11-gdbm python3.11-venv`
    6. `sudo apt install curl`
-   7. `curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11`
+   7. `sudo apt install gcc`
+   8. `curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11`
 
 2. Скачайте `git` с помощью команды `sudo apt install git`.
 3. Скачайте FunPayCardinal с помощью команды `git clone https://github.com/woopertail/FunPayCardinal`.
