@@ -70,7 +70,8 @@ def get_user_lots_info(user_id: int, include_currency: bool = False, timeout: fl
         lot_divs = div.parent.find_all("a", {"class": "tc-item"})
         for lot_div in lot_divs:
             lot_id = int(lot_div["href"].split("id=")[1])
-            server = lot_div.find("div", {"class": "tc-server"}).text
+            server = lot_div.find("div", {"class": "tc-server"})
+            server = server.text if server is not None else None
             lot_title = lot_div.find("div", {"class": "tc-desc-text"}).text
             price = lot_div.find("div", {"class": "tc-price"})["data-s"]
 

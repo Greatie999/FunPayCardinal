@@ -11,7 +11,7 @@ class Lot:
                  category_id: int,
                  game_id: int | None,
                  id_: int,
-                 server: str,
+                 server: str | None,
                  title: str,
                  price: str):
         """
