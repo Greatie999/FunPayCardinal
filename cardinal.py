@@ -424,7 +424,8 @@ class Cardinal:
                     self.run_handlers(self.message_event_handlers, (event, self, ))
 
                 elif event.type == FunPayAPI.enums.EventTypes.NEW_ORDER:
-                    self.process_orders(event)
+                    if self.processed_orders is not None:
+                        self.process_orders(event)
 
     def process_orders(self, event: FunPayAPI.runner.OrderEvent):
         """
