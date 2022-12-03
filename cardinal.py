@@ -351,7 +351,6 @@ class Cardinal:
                 new_msg_obj = FunPayAPI.runner.MessageEvent(msg.node_id,
                                                             obj_text,
                                                             msg.sender_username,
-                                                            msg.send_time,
                                                             msg.tag)
 
                 self.runner.update_lat_message(new_msg_obj)

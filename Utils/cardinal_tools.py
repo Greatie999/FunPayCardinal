@@ -6,6 +6,8 @@
 import os
 import json
 from datetime import datetime
+import itertools
+
 
 import FunPayAPI.account
 import FunPayAPI.categories
@@ -144,7 +146,7 @@ def time_to_str(time_: int):
     return time_str.strip()
 
 
-def get_product_from_json(path: str) -> list[str | int] | None:
+def get_product(path: str) -> list[str | int] | None:
     """
     Берет 1 единицу товара из файла.
 
@@ -154,21 +156,31 @@ def get_product_from_json(path: str) -> list[str | int] | None:
     with open(path, "r", encoding="utf-8") as f:
         products = f.read()
 
-    products = json.loads(products)
+    if path.endswith(".json"):
+        products = json.loads(products)
+    else:
+        products = products.split("\n")
+
+    # Убираем пустые элементы
+    products = list(itertools.filterfalse(lambda el: not el, products))
+
     if not len(products):
         raise excs.NoProductsError(path)
 
     product = str(products[0])
     products.pop(0)
     amount = len(products)
-    products = json.dumps(products, indent=4, ensure_ascii=False)
 
     with open(path, "w", encoding="utf-8") as f:
-        f.write(products)
+        if path.endswith(".json"):
+            f.write(json.dumps(products, indent=4, ensure_ascii=False))
+        else:
+            f.write("\n".join(products))
+
     return [product, amount]
 
 
-def add_product_to_json(path: str, product: str) -> None:
+def add_product(path: str, product: str) -> None:
     """
     Добавляет 1 единицу товара в файл.
 
@@ -179,11 +191,18 @@ def add_product_to_json(path: str, product: str) -> None:
     with open(path, "r", encoding="utf-8") as f:
         products = f.read()
 
-    products = json.loads(products)
+    if path.endswith(".json"):
+        products = json.loads(products)
+    else:
+        products = products.split("\n")
+
     products.append(product)
 
     with open(path, "w", encoding="utf-8") as f:
-        f.write(json.dumps(products, indent=4, ensure_ascii=False))
+        if path.endswith(".json"):
+            f.write(json.dumps(products, indent=4, ensure_ascii=False))
+        else:
+            f.write("\n".join(products))
 
 
 def format_msg_text(text: str, msg: FunPayAPI.runner.MessageEvent) -> str:

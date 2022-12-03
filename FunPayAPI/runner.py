@@ -32,20 +32,17 @@ class MessageEvent(Event):
                  node_id: int,
                  message_text: str,
                  sender_username: str | None,
-                 send_time: str | None,
                  tag: str | None):
         """
         :param node_id: ID чата.
         :param message_text: текст сообщения.
         :param sender_username: никнейм отправителя (название чата)
-        :param send_time: время отправления.
         :param tag: тэг runner'а.
         """
         super(MessageEvent, self).__init__(EventTypes.NEW_MESSAGE)
         self.node_id = node_id
         self.sender_username = sender_username
         self.message_text = message_text
-        self.send_time = send_time
         self.tag = tag
 
 
@@ -130,21 +127,17 @@ class Runner:
                 for msg in messages:
                     node_id = int(msg["data-id"])
                     message_text = msg.find("div", {"class": "contact-item-message"}).text
-                    send_time = msg.find("div", {"class": "contact-item-time"}).text
 
                     # Если это старое сообщение (сохранено в self.last_messages) -> пропускаем.
                     if node_id in self.last_messages:
                         check_msg = self.last_messages[node_id]
                         if check_msg.message_text == message_text:
-                            if check_msg.send_time is not None and check_msg.send_time == send_time:
-                                continue
-                            elif check_msg.send_time is None:
-                                continue
+                            continue
 
                     sender_username = msg.find("div", {"class": "media-user-name"}).text
 
                     msg_object = MessageEvent(node_id=node_id, message_text=message_text, sender_username=sender_username,
-                                              send_time=send_time, tag=self.message_tag)
+                                              tag=self.message_tag)
                     self.update_lat_message(msg_object)
                     if self.first_request:
                         continue

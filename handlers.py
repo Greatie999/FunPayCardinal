@@ -66,7 +66,7 @@ def send_new_message_notification(msg: MessageEvent, cardinal: Cardinal, *args):
 
 {msg.message_text}"""
     replaces = [
-        ["$userlink", f"[{msg.sender_username}](https://funpay.com/chat?node={msg.node_id})"]
+        ["$userlink", f"[{msg.sender_username}](https://funpay.com/chat/?node={msg.node_id})"]
     ]
 
     button = create_reply_button(msg.node_id)
@@ -84,7 +84,7 @@ def send_response(msg: MessageEvent, cardinal: Cardinal, *args) -> bool:
     response_text = cardinal_tools.format_msg_text(cardinal.auto_response_config[msg.message_text.strip()]["response"],
                                                    msg)
 
-    new_msg_object = MessageEvent(msg.node_id, response_text, msg.sender_username, msg.send_time, msg.tag)
+    new_msg_object = MessageEvent(msg.node_id, response_text, msg.sender_username, msg.tag)
 
     response = cardinal.send_message(new_msg_object)
     return response
@@ -185,7 +185,7 @@ def send_product_text(node_id: int, buyer_username: str, text: str, order_id: st
     :param cardinal: экземпляр Кардинала.
     :return: результат отправки.
     """
-    new_msg_obj = MessageEvent(node_id, text, buyer_username, None, None)
+    new_msg_obj = MessageEvent(node_id, text, buyer_username, None)
     attempts = 3
     while attempts:
         try:
@@ -235,8 +235,8 @@ def deliver_product(order: Order, cardinal: Cardinal, *args) -> tuple[bool, str,
         return result, response_text, -1
 
     # Получаем товар.
-    product = cardinal_tools.get_product_from_json(delivery_obj.get("productsFilePath"))
-    product_text = product[0]
+    product = cardinal_tools.get_product(delivery_obj.get("productsFilePath"))
+    product_text = product[0].replace("\\n", "\n")
     response_text = response_text.replace("$product", product_text)
 
     # Отправляем товар.
@@ -244,7 +244,7 @@ def deliver_product(order: Order, cardinal: Cardinal, *args) -> tuple[bool, str,
 
     # Если произошла какая-либо ошибка при отправлении товара, возвращаем товар обратно в файл с товарами.
     if not result:
-        cardinal_tools.add_product_to_json(delivery_obj.get("productsFilePath"), product_text)
+        cardinal_tools.add_product(delivery_obj.get("productsFilePath"), product_text)
     return result, response_text, -1
 
 

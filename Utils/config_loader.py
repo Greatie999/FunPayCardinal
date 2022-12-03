@@ -6,6 +6,7 @@ import configparser
 import codecs
 import os
 import json
+import itertools
 
 from Utils.exceptions import (SectionNotExists, ParamNotExists, ParamValueEmpty, ParamValueNotValid,
                               NoProductsError, NoProductVarError,
@@ -172,13 +173,21 @@ def load_auto_delivery_config(config_path: str) -> configparser.ConfigParser:
         if not os.path.exists(products_file_path):
             raise NoSuchProductFileError(lot, products_file_path)
 
-        # Проверяем валидность json'а.
+        # Читаем файл
         with open(products_file_path, "r", encoding="utf-8") as f:
             products = f.read()
-        try:
-            products = json.loads(products)
-        except json.decoder.JSONDecodeError as e:
-            raise JSONParseError(lot, products_file_path, str(e))
+
+        # Проверяем валидность JSON'а.
+        if products_file_path.endswith(".json"):
+            try:
+                products = json.loads(products)
+            except json.decoder.JSONDecodeError as e:
+                raise JSONParseError(lot, products_file_path, str(e))
+        else:
+            products = products.split("\n")
+
+        # Убираем пустые элементы
+        products = list(itertools.filterfalse(lambda el: not el, products))
 
         # Проверяем кол-во товара
         if len(products) < 1:

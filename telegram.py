@@ -154,7 +154,7 @@ class TGBot:
                     self.user_reply_statuses[chat_id].pop(user_id)
                     return
                 node_id = int(self.user_reply_statuses[chat_id][user_id].split(":")[1])
-                new_msg_obj = MessageEvent(node_id, message.text, None, None, None)
+                new_msg_obj = MessageEvent(node_id, message.text, None, None)
                 try:
                     self.cardinal.send_message(new_msg_obj)
                     self.bot.send_message(chat_id, "Получилось.")

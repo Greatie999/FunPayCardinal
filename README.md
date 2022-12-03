@@ -87,7 +87,7 @@
 3. Перенести папку `FunPayCardinal-master` в нужное вам место.
 4. Перейдите в папку `FunPayCardinal-master`.
 5. В адресной строке введите `cmd` и нажмите `Enter`. <img src="https://i.ibb.co/0mjkf9Q/explorer-Zcsm-Ife-XFl.png">
-6. В открывшейся командной строке введите `pip install -r requirements.txt`. Дождитесь окончания загрузки пакетов.
+6. В открывшейся командной строке введите `python setup.py`. Дождитесь окончания загрузки пакетов.
 7. Закройте командную строку, настройте конфиги и запустите файл `Start.bat`.
 
 ### :hotsprings: Linux (Ubuntu)
@@ -105,7 +105,7 @@
 2. Скачайте `git` с помощью команды `sudo apt install git`.
 3. Скачайте FunPayCardinal с помощью команды `git clone https://github.com/woopertail/FunPayCardinal`.
 4. Перейдите в папку `FunPayCardinal` с помощью команрды `cd FunPayCardinal`.
-5. Установите нужные пакеты с помощью команды `python3.11 -m pip install -r requirements.txt`.
+5. Установите нужные пакеты с помощью команды `python3.11 setup.py`.
 6. Настройте конфиги и запустите FunPay Cardinal с помощью команды `python3.11 main.py`.
 
 ## :hammer_and_wrench: Настройка конфигов
